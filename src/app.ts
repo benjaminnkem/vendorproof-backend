@@ -8,6 +8,7 @@ import { CustomError, HttpStatus } from "./@types";
 import { errorHandler } from "./utils/request-handlers";
 import { testDbConnection } from "./config/db";
 import { testCacheConnection } from "./config/redis";
+import router from "./routes";
 
 const app = express();
 
@@ -73,6 +74,8 @@ app.use("/health", async (req, res, next) => {
     next(error);
   }
 });
+
+app.use("/api", router);
 
 app.use((req, res) => {
   res.status(HttpStatus.NOT_FOUND).json({
