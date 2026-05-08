@@ -55,29 +55,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/health", async (req, res, next) => {
-  const tests = await Promise.all([testDbConnection(), testCacheConnection()]);
-
-  const allHealthy = tests.every((result) => result === true);
-
-  try {
-    if (allHealthy) {
-      throw new CustomError(400, "Simulated error for testing purposes.");
-      res.status(HttpStatus.OK).json({
-        status: "ok",
-        timestamp: new Date().toISOString(),
-      });
-    } else {
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        status: "error",
-        timestamp: new Date().toISOString(),
-      });
-    }
-  } catch (error) {
-    next(error);
-  }
-});
-
 app.use("/api", router);
 
 app.use((req, res) => {

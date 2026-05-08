@@ -11,3 +11,153 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id        Int    @id @default(autoincrement())
+  email     String @unique
+  firstName String
+  lastName  String
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userAuth  UserAuth?
+
+  @@index([email], name: "idx_user_email")
+  @@map("users")
+}
+
+model UserAuth {
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  password                 String?
+  passwordHistory          String[]  @default([])
+  loginRequestCount        Int       @default(0)
+  isLocked                 Boolean   @default(false)
+  passwordResetToken       String?
+  passwordResetTokenExpiry DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([passwordResetToken], name: "idx_password_reset_token")
+  @@map("user_auths")
+}
+
+model Business {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  businessVerifications BusinessVerification[]
+
+  trustScore          Float               @default(0)
+  paymentLink         String?
+  trustScoreHistories TrustScoreHistory[]
+  trustEntries        TrustEntry[]
+  socials             Social[]
+
+  @@index([name], name: "idx_business_name")
+  @@map("businesses")
+}
+
+model Social {
+  id         Int            @id @default(autoincrement())
+  businessId Int
+  platform   SocialPlatform
+  url        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("socials")
+}
+
+enum SocialPlatform {
+  FACEBOOK
+  TWITTER
+  LINKEDIN
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  WEBSITE
+  OTHER
+}
+
+model BusinessVerification {
+  id               Int              @id @default(autoincrement())
+  businessId       Int
+  url              String
+  verificationType VerificationType
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@index([verificationType], name: "idx_verification_type")
+  @@map("business_verifications")
+}
+
+enum VerificationType {
+  CAC
+  NIN
+  UTILITY_BILL
+  SELFIE
+  OTHER
+}
+
+model TrustScoreHistory {
+  id         Int      @id @default(autoincrement())
+  businessId Int
+  score      Float
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("trust_score_histories")
+}
+
+model TrustEntry {
+  id             Int     @id @default(autoincrement())
+  businessId     Int
+  rating         Int
+  comment        String?
+  scoreIncrement Float
+  scoreBefore    Float
+  scoreAfter     Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("trust_entries")
+}
+
+model Tier {
+  id          Int       @id @default(autoincrement())
+  name        TierNames @unique
+  description String?
+  minScore    Float
+  maxScore    Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tiers")
+}
+
+enum TierNames {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}

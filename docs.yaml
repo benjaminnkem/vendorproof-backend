@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: API documentation for the VendorProof backend.
 paths:
-  /health:
+  /api/health:
     get:
       summary: Health check endpoint
       tags:
@@ -19,10 +19,16 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: ok
-                  timestamp:
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
                     type: string
-                    format: date-time
+                    example: API is healthy
+                  data:
+                    nullable: true
+                    example: null
         "500":
           description: Service is unhealthy
           content:
@@ -30,9 +36,61 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  error:
                     type: string
-                    example: error
+                    example: API health check failed
+                  statusCode:
+                    type: integer
+                    example: 500
                   timestamp:
                     type: string
                     format: date-time
+  /api/config:
+    get:
+      summary: Get frontend configuration values
+      tags:
+        - Config
+      responses:
+        "200":
+          description: Configuration values retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Configurations retrieved successfully
+                  data:
+                    type: object
+                    properties:
+                      tierNames:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - FREE
+                          - BASIC
+                          - PREMIUM
+                      socials:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - TWITTER
+                          - INSTAGRAM
+                          - LINKEDIN
+                      businessVerificationTypes:
+                        type: array
+                        items:
+                          type: string
+                        example:
+                          - CAC
+                          - SELFIE
+                          - UTILITY_BILL
