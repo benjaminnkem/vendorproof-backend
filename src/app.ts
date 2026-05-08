@@ -8,6 +8,7 @@ import { CustomError, HttpStatus } from "./@types";
 import { errorHandler } from "./utils/request-handlers";
 import { testDbConnection } from "./config/db";
 import { testCacheConnection } from "./config/redis";
+import setupSwaggerDocs from "./config/swagger";
 import router from "./routes";
 
 const app = express();
@@ -41,6 +42,8 @@ app.use(
 );
 
 app.disable("x-powered-by");
+
+setupSwaggerDocs(app);
 
 app.use((req, res, next) => {
   if (
