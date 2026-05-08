@@ -51,12 +51,13 @@ model Business {
   name        String
   description String?
 
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  businessVerifications BusinessVerification[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  businessKYCs BusinessKYC[]
 
   trustScore          Float               @default(0)
   paymentLink         String?
+  qrCodeUrl           String?
   trustScoreHistories TrustScoreHistory[]
   trustEntries        TrustEntry[]
   socials             Social[]
@@ -90,7 +91,7 @@ enum SocialPlatform {
   OTHER
 }
 
-model BusinessVerification {
+model BusinessKYC {
   id               Int              @id @default(autoincrement())
   businessId       Int
   url              String
@@ -102,7 +103,7 @@ model BusinessVerification {
   business Business @relation(fields: [businessId], references: [id])
 
   @@index([verificationType], name: "idx_verification_type")
-  @@map("business_verifications")
+  @@map("business_kycs")
 }
 
 enum VerificationType {
@@ -127,8 +128,9 @@ model TrustScoreHistory {
 model TrustEntry {
   id             Int     @id @default(autoincrement())
   businessId     Int
-  rating         Int
+  rating         Int?
   comment        String?
+  reason         String?
   scoreIncrement Float
   scoreBefore    Float
   scoreAfter     Float
