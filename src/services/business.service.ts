@@ -1,6 +1,5 @@
 import { prisma } from "../config/db";
 import { CustomError, HttpStatus } from "../@types";
-import { UpdateBusinessProfileInput, UpdateBusinessSocialsInput } from "../schemas/business.schema";
 
 export const getBusinessById = async (id: number) => {
   const business = await prisma.business.findUnique({
@@ -23,39 +22,6 @@ export const getBusinessById = async (id: number) => {
   return { ...business, tier };
 };
 
-export const updateProfile = async (businessId: number, data: UpdateBusinessProfileInput) => {
-  const business = await prisma.business.findUnique({ where: { id: businessId } });
-
-  if (!business) {
-    throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
-  }
-
-  return prisma.business.update({
-    where: { id: businessId },
-    data: {
-      ...(data.name && { name: data.name }),
-      ...(data.description !== undefined && { description: data.description }),
-    },
-    include: { socials: true },
-  });
-};
-
-export const updateSocials = async (businessId: number, data: UpdateBusinessSocialsInput) => {
-  const business = await prisma.business.findUnique({ where: { id: businessId } });
-
-  if (!business) {
-    throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
-  }
-
-  await prisma.social.deleteMany({ where: { businessId } });
-
-  const socials = await prisma.social.createManyAndReturn({
-    data: data.socials.map((s) => ({ ...s, businessId })),
-  });
-
-  return socials;
-};
-
 export const getTrustScore = async (businessId: number) => {
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -76,7 +42,9 @@ export const getTrustScoreHistory = async (
   page: number,
   limit: number,
 ) => {
-  const business = await prisma.business.findUnique({ where: { id: businessId } });
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+  });
 
   if (!business) {
     throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
@@ -126,7 +94,12 @@ export const getTrustScoreReason = async (businessId: number) => {
   const positiveEntries = recentEntries.filter((e) => e.scoreIncrement > 0);
   const negativeEntries = recentEntries.filter((e) => e.scoreIncrement < 0);
 
-  const summary = buildScoreSummary(business.trustScore, positiveEntries, negativeEntries, tier?.name ?? null);
+  const summary = buildScoreSummary(
+    business.trustScore,
+    positiveEntries,
+    negativeEntries,
+    tier?.name ?? null,
+  );
 
   return {
     currentScore: business.trustScore,
@@ -148,9 +121,12 @@ export const getAiProfile = async (businessId: number) => {
 
   const signals: string[] = [];
 
-  if (business.description) signals.push(`Description: ${business.description}`);
+  if (business.description)
+    signals.push(`Description: ${business.description}`);
   if (business.socials.length > 0) {
-    signals.push(`Active on: ${business.socials.map((s) => s.platform).join(", ")}`);
+    signals.push(
+      `Active on: ${business.socials.map((s) => s.platform).join(", ")}`,
+    );
   }
 
   return {
@@ -180,10 +156,14 @@ const buildScoreSummary = (
 ): string => {
   const parts: string[] = [];
 
-  parts.push(`Your current trust score is ${score.toFixed(1)}${tierName ? ` (${tierName} tier)` : ""}.`);
+  parts.push(
+    `Your current trust score is ${score.toFixed(1)}${tierName ? ` (${tierName} tier)` : ""}.`,
+  );
 
   if (positive.length > 0) {
-    parts.push(`You have ${positive.length} positive event(s) contributing to your score.`);
+    parts.push(
+      `You have ${positive.length} positive event(s) contributing to your score.`,
+    );
   }
 
   if (negative.length > 0) {
