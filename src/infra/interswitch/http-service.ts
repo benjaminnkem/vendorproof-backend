@@ -11,7 +11,7 @@ interface InterswitchHttpService {
   readonly client: AxiosInstance | null;
 
   getToken(): Promise<string>;
-  verifyTIN(tin: string): Promise<boolean>;
+  verifyTIN(tin: string): Promise<VerifyTINResponse>;
   verifyNIN(body: VerifyNINRequest): Promise<VerifyNINResponse>;
   verifyCAC(companyNameOrRcNumber: string): Promise<VerifyCACResponse>;
 }
@@ -27,10 +27,8 @@ class InterswitchHttpServiceImpl implements InterswitchHttpService {
     return "mock-interswitch-token";
   }
 
-  async verifyTIN(tin: string): Promise<boolean> {
-    const response = this.buildTinResponse(tin);
-
-    return response.summary.tin_check === "verified";
+  async verifyTIN(tin: string): Promise<VerifyTINResponse> {
+    return this.buildTinResponse(tin);
   }
 
   async verifyNIN(body: VerifyNINRequest): Promise<VerifyNINResponse> {

@@ -7,7 +7,9 @@ declare global {
   var globalRedis: RedisClient | null;
 }
 
-const redisClient = new RedisClient(env.REDIS_CONNECTION_STRING);
+const redisClient = new RedisClient(env.REDIS_CONNECTION_STRING, {
+  maxRetriesPerRequest: null,
+});
 
 if (!globalThis.globalRedis) {
   globalThis.globalRedis = redisClient;
@@ -31,5 +33,16 @@ export const testCacheConnection = async (): Promise<boolean> => {
     return false;
   }
 };
+
+export const closeCacheConnection = async (): Promise<void> => {
+  try {
+    await globalThis.globalRedis?.quit();
+    console.log(chalk.green("Redis connection closed successfully."));
+  } catch (err) {
+    console.error(chalk.red("Failed to close Redis connection:"), err);
+  }
+};
+
+export const redisConnection = globalThis.globalRedis as RedisClient;
 
 export const redis = globalThis.globalRedis as RedisClient;

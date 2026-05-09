@@ -8,3 +8,7 @@ export enum HttpStatus {
   UNPROCESSABLE_ENTITY = 422,
   INTERNAL_SERVER_ERROR = 500,
 }
+
+export enum QueueNames {
+  KYC_VERIFICATION = "kyc_verification",
+}

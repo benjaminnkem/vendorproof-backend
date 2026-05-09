@@ -10,6 +10,7 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log(err);
   logger.error(err?.message || JSON.stringify(err));
 
   let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
