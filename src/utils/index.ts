@@ -59,3 +59,25 @@ export const toQueueFile = (file: Express.Multer.File | undefined) => {
     originalname: file.originalname,
   };
 };
+
+export const formatPhoneNumber = (phoneNumber: string): string => {
+  const cleaned = phoneNumber.replace(/\D/g, "");
+  if (cleaned.length === 10) {
+    return `234${cleaned}`;
+  } else if (cleaned.length === 11 && cleaned.startsWith("0")) {
+    return `234${cleaned.slice(1)}`;
+  } else if (cleaned.length === 13 && cleaned.startsWith("234")) {
+    return cleaned;
+  } else {
+    throw new Error("Invalid phone number format");
+  }
+};
+
+export const generateOtp = (length: number = 6): string => {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * digits.length)];
+  }
+  return otp;
+};

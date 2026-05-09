@@ -10,13 +10,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int    @id @default(autoincrement())
-  email     String @unique
-  firstName String
-  lastName  String
+  id          Int    @id @default(autoincrement())
+  email       String @unique
+  firstName   String
+  lastName    String
+  phoneNumber String @unique
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
@@ -37,6 +39,12 @@ model UserAuth {
   isLocked                 Boolean   @default(false)
   passwordResetToken       String?
   passwordResetTokenExpiry DateTime?
+
+  accessToken String?
+  lastLoginAt DateTime?
+
+  loginOtp          String?
+  loginOtpExpiresAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

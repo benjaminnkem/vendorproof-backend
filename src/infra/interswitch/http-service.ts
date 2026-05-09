@@ -4,7 +4,7 @@ import {
   VerifyNINRequest,
   VerifyNINResponse,
   VerifyTINResponse,
-} from "./type";
+} from "./types";
 import interswitchClient from "./http-client";
 
 interface InterswitchHttpService {

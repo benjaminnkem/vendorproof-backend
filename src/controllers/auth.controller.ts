@@ -2,7 +2,14 @@ import { Request } from "express";
 import { ZodError } from "zod";
 import { CustomError, HttpStatus, UploadFileMap } from "../@types";
 import asyncHandler from "../config/async-handler";
-import { signUpSchema, SignUpInput } from "../schemas/auth.schema";
+import {
+  signUpSchema,
+  SignUpInput,
+  signInSchema,
+  SignInInput,
+  verifySignInOtpSchema,
+  VerifySignInOtpInput,
+} from "../schemas/auth.schema";
 import * as authService from "../services/auth.service";
 import { parseJsonField } from "../utils";
 
@@ -32,3 +39,32 @@ export const signUp = asyncHandler(async (req: Request, res) => {
     message: "Account created successfully",
   });
 });
+
+export const signIn = asyncHandler(
+  async (req: Request<{}, {}, SignInInput>, res) => {
+    const parsed = signInSchema.parse(req.body);
+
+    await authService.signIn(parsed?.phoneNumber);
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message: "OTP sent to registered phone number",
+    });
+  },
+);
+
+export const verifySignInOtp = asyncHandler(
+  async (req: Request<{}, {}, VerifySignInOtpInput>, res) => {
+    const parsed = verifySignInOtpSchema.parse(req.body);
+
+    const response = await authService.verifySignInOtp(parsed);
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message: "OTP verified successfully",
+      data: response,
+    });
+  },
+);

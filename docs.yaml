@@ -19,13 +19,8 @@ paths:
                 - firstName
                 - lastName
                 - email
-                - password
+                - phoneNumber
                 - businessName
-                - businessDescription
-                - businessEmail
-                - businessPhoneNumber
-                - businessAlternativePhoneNumber
-                - businessCategory
               properties:
                 firstName:
                   type: string
@@ -37,11 +32,9 @@ paths:
                   type: string
                   format: email
                   example: ada@vendorproof.app
-                password:
+                phoneNumber:
                   type: string
-                  format: password
-                  minLength: 6
-                  example: SecurePass123
+                  example: +2348012345678
                 businessName:
                   type: string
                   example: Ada Groceries Ltd
@@ -158,6 +151,188 @@ paths:
       description: >-
         Creates user and business records. KYC files and TIN are accepted at signup,
         then processed asynchronously by the BullMQ KYC queue.
+
+  /api/auth/signin:
+    post:
+      summary: Request login OTP with phone number
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: +2348012345678
+      responses:
+        "200":
+          description: OTP sent to registered phone number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: OTP sent to registered phone number
+        "404":
+          description: User not found for the supplied phone number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: User not found
+        "422":
+          description: Schema validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 422
+                  message:
+                    type: string
+                    example: Validation failed
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
+
+  /api/auth/verify-signin-otp:
+    post:
+      summary: Verify login OTP and issue access token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - otp
+              properties:
+                phoneNumber:
+                  type: string
+                  example: +2348012345678
+                otp:
+                  type: string
+                  example: "123456"
+      responses:
+        "200":
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: OTP verified successfully
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "401":
+          description: OTP is invalid or expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 401
+                  message:
+                    type: string
+                    example: Invalid OTP
+        "404":
+          description: User not found for the supplied phone number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: User not found
+        "422":
+          description: Schema validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 422
+                  message:
+                    type: string
+                    example: Validation failed
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
   /api/health:
     get:
       summary: Health check endpoint

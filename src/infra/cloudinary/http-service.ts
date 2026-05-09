@@ -1,6 +1,6 @@
 import { UploadApiOptions, v2 as cloudinary } from "cloudinary";
 import cloudinaryClient from "./http-client";
-import { UploadFileRequest, UploadFileResponse } from "./type";
+import { UploadFileRequest, UploadFileResponse } from "./types";
 
 interface CloudinaryHttpService {
   readonly client: typeof cloudinary;

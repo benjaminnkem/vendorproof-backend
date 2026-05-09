@@ -11,4 +11,5 @@ export enum HttpStatus {
 
 export enum QueueNames {
   KYC_VERIFICATION = "kyc_verification",
+  SEND_SMS = "send_sms",
 }

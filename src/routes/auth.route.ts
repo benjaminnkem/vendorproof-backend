@@ -16,4 +16,7 @@ authRouter.post(
   authController.signUp,
 );
 
+authRouter.post("/signin", authController.signIn);
+authRouter.post("/verify-signin-otp", authController.verifySignInOtp);
+
 export default authRouter;

@@ -1,15 +1,25 @@
-import { CustomError, HttpStatus } from "../@types";
+import { addDays, addMinutes, isBefore } from "date-fns";
+import { CustomError, HttpStatus, QueueNames } from "../@types";
 import { prisma } from "../config/db";
 import cloudinaryHttpService from "../infra/cloudinary/http-service";
 import { enqueueKycVerificationJob } from "../queues/kyc/kyc.queue";
-import { SignUpInput } from "../schemas/auth.schema";
-import { hashPassword, slugify, toQueueFile } from "../utils";
-import { processBusinessKycVerificationJob } from "./kyc.service";
+import { SignUpInput, VerifySignInOtpInput } from "../schemas/auth.schema";
+import {
+  formatPhoneNumber,
+  generateOtp,
+  hashPassword,
+  slugify,
+  toQueueFile,
+} from "../utils";
+import { smsQueue } from "../queues/sms/sms.queue";
+import { sign } from "jsonwebtoken";
 
 export const signUp = async (payload: SignUpInput) => {
-  const existingUser = await prisma.user.findUnique({
+  payload.phoneNumber = formatPhoneNumber(payload.phoneNumber);
+
+  const existingUser = await prisma.user.findFirst({
     where: {
-      email: payload.email,
+      OR: [{ email: payload.email }, { phoneNumber: payload.phoneNumber! }],
     },
     select: {
       id: true,
@@ -17,7 +27,10 @@ export const signUp = async (payload: SignUpInput) => {
   });
 
   if (existingUser) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "Email already exists");
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "Email or phone number already exists",
+    );
   }
 
   const folder = `vendorproof/businesses/${slugify(payload.businessName)}`;
@@ -43,22 +56,19 @@ export const signUp = async (payload: SignUpInput) => {
       : Promise.resolve([]),
   ]);
 
-  const hashedPassword = await hashPassword(payload.password);
-
   const created = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         firstName: payload.firstName,
         lastName: payload.lastName,
         email: payload.email,
+        phoneNumber: payload.phoneNumber,
       },
     });
 
     await tx.userAuth.create({
       data: {
         userId: user.id,
-        password: hashedPassword,
-        passwordHistory: [hashedPassword],
       },
     });
 
@@ -145,4 +155,94 @@ export const signUp = async (payload: SignUpInput) => {
   }
 
   return "OK";
+};
+
+export const signIn = async (phoneNumber: string) => {
+  const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+
+  const user = await prisma.user.findUnique({
+    where: {
+      phoneNumber: formattedPhoneNumber,
+    },
+    select: {
+      id: true,
+      phoneNumber: true,
+    },
+  });
+
+  if (!user) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
+  }
+
+  const otp = generateOtp(6);
+  const otpExpiry = addMinutes(new Date(), 15);
+
+  await prisma.userAuth.update({
+    where: { userId: user.id },
+    data: {
+      loginOtp: otp,
+      loginOtpExpiresAt: otpExpiry,
+    },
+  });
+
+  smsQueue.add(QueueNames.SEND_SMS, {
+    to: [user.phoneNumber],
+    message: `Your login OTP for VendorProof is ${otp}. It expires in 15 minutes.`,
+  });
+
+  return "OK";
+};
+
+export const verifySignInOtp = async (body: VerifySignInOtpInput) => {
+  const formattedPhoneNumber = formatPhoneNumber(body.phoneNumber);
+
+  const user = await prisma.userAuth.findFirst({
+    where: {
+      user: {
+        phoneNumber: formattedPhoneNumber,
+      },
+    },
+    select: {
+      id: true,
+      loginOtp: true,
+      loginOtpExpiresAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.loginOtp !== body.otp) {
+    throw new CustomError(HttpStatus.UNAUTHORIZED, "Invalid OTP");
+  }
+
+  if (isBefore(user.loginOtpExpiresAt!, new Date())) {
+    throw new CustomError(HttpStatus.UNAUTHORIZED, "OTP has expired");
+  }
+
+  const accessToken = sign(
+    {
+      sub: user.id,
+      exp: addDays(new Date(), 7).getTime() / 1000,
+    },
+    process.env.JWT_SECRET!,
+    {
+      expiresIn: "7d",
+    },
+  );
+
+  await prisma.userAuth.update({
+    where: { id: user.id },
+    data: {
+      loginOtp: null,
+      loginOtpExpiresAt: null,
+      lastLoginAt: new Date(),
+      accessToken,
+    },
+  });
+
+  return {
+    accessToken,
+  };
 };
