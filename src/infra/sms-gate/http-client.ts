@@ -9,7 +9,7 @@ const basicAuthToken = Buffer.from(
 ).toString("base64");
 
 const smsGateClient = axios.create({
-  baseURL: "https://api.smsgate.com/3rdparty/v1",
+  baseURL: "https://api.sms-gate.app/3rdparty/v1",
   headers: {
     "Content-Type": "application/json",
     Authorization: `Basic ${basicAuthToken}`,

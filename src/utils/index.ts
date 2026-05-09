@@ -63,10 +63,12 @@ export const toQueueFile = (file: Express.Multer.File | undefined) => {
 export const formatPhoneNumber = (phoneNumber: string): string => {
   const cleaned = phoneNumber.replace(/\D/g, "");
   if (cleaned.length === 10) {
-    return `234${cleaned}`;
+    return `+234${cleaned}`;
   } else if (cleaned.length === 11 && cleaned.startsWith("0")) {
-    return `234${cleaned.slice(1)}`;
+    return `+234${cleaned.slice(1)}`;
   } else if (cleaned.length === 13 && cleaned.startsWith("234")) {
+    return `+${cleaned}`;
+  } else if (cleaned.length === 14 && cleaned.startsWith("+234")) {
     return cleaned;
   } else {
     throw new Error("Invalid phone number format");
