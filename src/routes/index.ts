@@ -1,6 +1,7 @@
 import { Router } from "express";
 import triangleRouter from "./triangle.route";
 import authRouter from "./auth.route";
+import businessRouter from "./business.route";
 
 import * as miscController from "../controllers/misc.controller";
 
@@ -13,5 +14,6 @@ router.get("/health", miscController.healthCheck);
 // Mount other routers
 router.use("/auth", authRouter);
 router.use("/triangle", triangleRouter);
+router.use("/business", businessRouter);
 
 export default router;
