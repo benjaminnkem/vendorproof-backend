@@ -71,6 +71,7 @@ export const signUp = async (payload: SignUpInput) => {
         alternativePhoneNumber: payload.businessAlternativePhoneNumber!,
         logo: businessLogoUpload?.url!,
         category: payload.businessCategory!,
+        slug: slugify(payload.businessName),
       },
     });
 
