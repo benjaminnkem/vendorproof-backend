@@ -1,8 +1,10 @@
 import { CustomError, HttpStatus } from "../@types";
 import { prisma } from "../config/db";
 import cloudinaryHttpService from "../infra/cloudinary/http-service";
+import { enqueueKycVerificationJob } from "../queues/kyc/kyc.queue";
 import { SignUpInput } from "../schemas/auth.schema";
-import { hashPassword, slugify } from "../utils";
+import { hashPassword, slugify, toQueueFile } from "../utils";
+import { processBusinessKycVerificationJob } from "./kyc.service";
 
 export const signUp = async (payload: SignUpInput) => {
   const existingUser = await prisma.user.findUnique({
@@ -97,12 +99,50 @@ export const signUp = async (payload: SignUpInput) => {
       });
     }
 
+    const kycSelfie = toQueueFile(payload.kycSelfie);
+    const kycIdDocument = toQueueFile(payload.kycIdDocument);
+    const kycBusinessCacDocument = toQueueFile(payload.kycBusinessCacDocument);
+
+    const shouldEnqueueKyc =
+      Boolean(kycSelfie) ||
+      Boolean(kycIdDocument) ||
+      Boolean(kycBusinessCacDocument) ||
+      Boolean(payload.kycBusinessTinNumber);
+
     return {
       userId: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       businessId: business.id,
+      businessName: business.name,
+      businessSlug: business.slug,
+      ...(kycSelfie ? { kycSelfie } : {}),
+      ...(kycIdDocument ? { kycIdDocument } : {}),
+      ...(kycBusinessCacDocument ? { kycBusinessCacDocument } : {}),
+      tinNumber: payload.kycBusinessTinNumber,
+      shouldEnqueueKyc,
     };
   });
+
+  if (created.shouldEnqueueKyc) {
+    await enqueueKycVerificationJob({
+      businessId: created.businessId,
+      userId: created.userId,
+      firstName: created.firstName,
+      lastName: created.lastName,
+      businessName: created.businessName,
+      businessSlug: created.businessSlug,
+      ...(created.tinNumber ? { tinNumber: created.tinNumber } : {}),
+      ...(created.kycSelfie ? { kycSelfie: created.kycSelfie } : {}),
+      ...(created.kycIdDocument
+        ? { kycIdDocument: created.kycIdDocument }
+        : {}),
+      ...(created.kycBusinessCacDocument
+        ? { kycBusinessCacDocument: created.kycBusinessCacDocument }
+        : {}),
+    });
+  }
 
   return "OK";
 };

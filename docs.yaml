@@ -4,6 +4,160 @@ info:
   version: 1.0.0
   description: API documentation for the VendorProof backend.
 paths:
+  /api/auth/signup:
+    post:
+      summary: Register a new vendor account and business profile
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - firstName
+                - lastName
+                - email
+                - password
+                - businessName
+                - businessDescription
+                - businessEmail
+                - businessPhoneNumber
+                - businessAlternativePhoneNumber
+                - businessCategory
+              properties:
+                firstName:
+                  type: string
+                  example: Ada
+                lastName:
+                  type: string
+                  example: Okafor
+                email:
+                  type: string
+                  format: email
+                  example: ada@vendorproof.app
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: SecurePass123
+                businessName:
+                  type: string
+                  example: Ada Groceries Ltd
+                businessDescription:
+                  type: string
+                  example: Retail grocery supplier for households and restaurants.
+                businessEmail:
+                  type: string
+                  format: email
+                  example: hello@adagroceries.com
+                businessPhoneNumber:
+                  type: string
+                  example: +2348012345678
+                businessAlternativePhoneNumber:
+                  type: string
+                  example: +2348098765432
+                businessCategory:
+                  type: string
+                  example: Retail
+                socials:
+                  type: string
+                  description: JSON string array of socials.
+                  example: '[{"platform":"INSTAGRAM","url":"https://instagram.com/adagroceries"}]'
+                bankDetails:
+                  type: string
+                  description: JSON string object for bank details.
+                  example: '{"accountName":"Ada Groceries Ltd","accountNumber":"0123456789","bankName":"Mock Bank","bankCode":"999"}'
+                businessLogo:
+                  type: string
+                  format: binary
+                  description: Single business logo image.
+                businessShowCaseImages:
+                  type: array
+                  description: Up to 10 showcase images.
+                  items:
+                    type: string
+                    format: binary
+                kycSelfie:
+                  type: string
+                  format: binary
+                  description: Personal selfie for KYC verification.
+                kycIdDocument:
+                  type: string
+                  format: binary
+                  description: NIN or other valid identity document image.
+                kycBusinessCacDocument:
+                  type: string
+                  format: binary
+                  description: CAC document image for business verification.
+                kycBusinessTinNumber:
+                  type: string
+                  description: TIN value used when CAC document is not provided.
+                  example: 12345678-0001
+      responses:
+        "201":
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Account created successfully
+        "400":
+          description: Validation failure or duplicate email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 400
+                  message:
+                    type: string
+                    example: Email already exists
+        "422":
+          description: Schema validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  statusCode:
+                    type: integer
+                    example: 422
+                  message:
+                    type: string
+                    example: Validation failed
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path:
+                          type: array
+                          items:
+                            type: string
+                        message:
+                          type: string
+      description: >-
+        Creates user and business records. KYC files and TIN are accepted at signup,
+        then processed asynchronously by the BullMQ KYC queue.
   /api/health:
     get:
       summary: Health check endpoint

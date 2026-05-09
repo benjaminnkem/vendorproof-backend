@@ -32,6 +32,12 @@ export const parseJsonField = <T>(value: unknown, fallback: T): T => {
 
 export const bufferUploader = multer({
   storage: multer.memoryStorage(),
+  fileFilter(req, file, callback) {
+    if (!file.mimetype.startsWith("image/")) {
+      return callback(null, false);
+    }
+    callback(null, true);
+  },
 });
 
 export const slugify = (value: string): string => {
@@ -40,4 +46,16 @@ export const slugify = (value: string): string => {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+};
+
+export const toQueueFile = (file: Express.Multer.File | undefined) => {
+  if (!file) {
+    return undefined;
+  }
+
+  return {
+    bufferBase64: file.buffer.toString("base64"),
+    mimetype: file.mimetype,
+    originalname: file.originalname,
+  };
 };

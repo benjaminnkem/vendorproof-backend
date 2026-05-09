@@ -35,4 +35,13 @@ export const testDbConnection = async (): Promise<boolean> => {
   }
 };
 
+export const closeDbConnection = async (): Promise<void> => {
+  try {
+    await globalThis.globalPrisma?.$disconnect();
+    console.log(chalk.green("Database connection closed successfully."));
+  } catch (error) {
+    console.error(chalk.red("Failed to close database connection:"), error);
+  }
+};
+
 export const prisma = globalThis.globalPrisma as PrismaClient;

@@ -1,6 +1,21 @@
 import app from "./app";
+import { closeDbConnection } from "./config/db";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
+import { closeCacheConnection } from "./config/redis";
+
+import { closeAllQueues } from "./queues";
+
+const closeServer = async () => {
+  logger.info("Shutting down server...");
+  await closeAllQueues();
+  await closeDbConnection();
+  await closeCacheConnection();
+
+  logger.info("Server shutdown complete.");
+
+  process.exit(0);
+};
 
 const initServer = async () => {
   try {
@@ -12,6 +27,7 @@ const initServer = async () => {
       );
 
       process.on("unhandledRejection", (reason, promise) => {
+        console.log(promise, reason);
         logger.error("Unhandled Rejection at:", promise, "reason:", reason);
         process.exit(1);
       });
@@ -21,15 +37,9 @@ const initServer = async () => {
         process.exit(1);
       });
 
-      process.on("SIGINT", () => {
-        logger.info("Gracefully shutting down...");
-        process.exit(0);
-      });
+      process.on("SIGINT", closeServer);
 
-      process.on("SIGTERM", () => {
-        logger.info("Gracefully shutting down...");
-        process.exit(0);
-      });
+      process.on("SIGTERM", closeServer);
     });
   } catch (error) {
     logger.error("Failed to start the server:", error);
