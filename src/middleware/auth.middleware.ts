@@ -11,8 +11,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   }
 
   try {
-    const token = authHeader.split(" ")[1];
-    const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
+    const token = authHeader.split(" ")[1]!;
+    const payload = jwt.verify(token, env.JWT_SECRET as string) as unknown as AuthPayload;
     req.user = payload;
     next();
   } catch (err) {

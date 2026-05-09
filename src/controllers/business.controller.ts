@@ -4,12 +4,12 @@ import { HttpStatus, CustomError } from "../@types";
 import * as businessService from "../services/business.service";
 
 export const getBusinessById = asyncHandler(async (req, res) => {
-  const id = parseInt(req.params.id as string);
+  const businessId = parseInt(req.params.businessId as string);
 
-  if (isNaN(id))
+  if (isNaN(businessId))
     throw new CustomError(HttpStatus.BAD_REQUEST, "Invalid business ID");
 
-  const business = await businessService.getBusinessById(id);
+  const business = await businessService.getBusinessById(businessId);
 
   res.json({
     status: "success",
@@ -33,24 +33,14 @@ export const getTrustScore = asyncHandler(async (req, res) => {
 
 export const getTrustScoreHistory = asyncHandler(async (req, res) => {
   const businessId = req.user!.businessId;
-  const page = Math.max(1, parseInt(String(req.query.page ?? "1")));
-  const limit = Math.min(
-    100,
-    Math.max(1, parseInt(String(req.query.limit ?? "20"))),
-  );
 
-  const result = await businessService.getTrustScoreHistory(
-    businessId,
-    page,
-    limit,
-  );
+  const result = await businessService.getTrustScoreHistory(businessId);
 
   res.json({
     status: "success",
     statusCode: HttpStatus.OK,
     message: "Trust score history retrieved successfully",
     data: result.history,
-    meta: result.pagination,
   });
 });
 
