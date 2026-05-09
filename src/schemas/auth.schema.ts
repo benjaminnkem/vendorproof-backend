@@ -26,7 +26,7 @@ export const signUpSchema = object({
   kycIdDocument: any().optional(),
   kycBusinessCacDocument: any().optional(),
   kycBusinessUtilityDocument: any().optional(),
-  kycBusinessTinDocument: any().optional(),
+  kycBusinessTinNumber: string().optional(),
 
   bankDetails: object({
     accountName: string().min(1, "Account name is required"),
@@ -42,6 +42,4 @@ export type SignUpInput = ReturnType<typeof signUpSchema.parse> & {
   kycSelfie?: Express.Multer.File;
   kycIdDocument?: Express.Multer.File;
   kycBusinessCacDocument?: Express.Multer.File;
-  kycBusinessUtilityDocument?: Express.Multer.File;
-  kycBusinessTinDocument?: Express.Multer.File;
 };

@@ -12,8 +12,6 @@ authRouter.post(
     { name: "kycSelfie", maxCount: 1 },
     { name: "kycIdDocument", maxCount: 1 },
     { name: "kycBusinessCacDocument", maxCount: 1 },
-    { name: "kycBusinessUtilityDocument", maxCount: 1 },
-    { name: "kycBusinessTinDocument", maxCount: 1 },
   ]),
   authController.signUp,
 );

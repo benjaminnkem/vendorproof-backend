@@ -20,8 +20,6 @@ export const signUp = asyncHandler(async (req: Request, res) => {
     kycSelfie: files.kycSelfie?.[0],
     kycIdDocument: files.kycIdDocument?.[0],
     kycBusinessCacDocument: files.kycBusinessCacDocument?.[0],
-    kycBusinessUtilityDocument: files.kycBusinessUtilityDocument?.[0],
-    kycBusinessTinDocument: files.kycBusinessTinDocument?.[0],
   };
 
   payload = signUpSchema.parse(parsedBody) as SignUpInput;
