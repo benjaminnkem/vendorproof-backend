@@ -2,15 +2,7 @@ import { CustomError, HttpStatus } from "../@types";
 import { prisma } from "../config/db";
 import cloudinaryHttpService from "../infra/cloudinary/http-service";
 import { SignUpInput } from "../schemas/auth.schema";
-import { hashPassword } from "../utils";
-
-const toSlug = (value: string): string => {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-};
+import { hashPassword, slugify } from "../utils";
 
 export const signUp = async (payload: SignUpInput) => {
   const existingUser = await prisma.user.findUnique({
@@ -26,7 +18,7 @@ export const signUp = async (payload: SignUpInput) => {
     throw new CustomError(HttpStatus.BAD_REQUEST, "Email already exists");
   }
 
-  const folder = `vendorproof/businesses/${toSlug(payload.businessName)}`;
+  const folder = `vendorproof/businesses/${slugify(payload.businessName)}`;
 
   const [businessLogoUpload, businessShowCaseImageUploads] = await Promise.all([
     payload.businessLogo

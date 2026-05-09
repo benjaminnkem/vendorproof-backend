@@ -58,6 +58,7 @@ model Business {
   phoneNumber            String?
   alternativePhoneNumber String?
   category               String?
+  slug                   String   @unique
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

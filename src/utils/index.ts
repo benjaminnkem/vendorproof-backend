@@ -33,3 +33,11 @@ export const parseJsonField = <T>(value: unknown, fallback: T): T => {
 export const bufferUploader = multer({
   storage: multer.memoryStorage(),
 });
+
+export const slugify = (value: string): string => {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};
