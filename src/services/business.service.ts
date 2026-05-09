@@ -1,9 +1,19 @@
 import { prisma } from "../config/db";
 import { CustomError, HttpStatus } from "../@types";
 
-export const getBusinessById = async (id: number) => {
+const getCurrentTier = async (score: number) => {
+  return prisma.tier.findFirst({
+    where: {
+      minScore: { lte: score },
+      OR: [{ maxScore: { gte: score } }, { maxScore: null }],
+    },
+    orderBy: { minScore: "desc" },
+  });
+};
+
+export const getBusinessById = async (businessId: number) => {
   const business = await prisma.business.findUnique({
-    where: { id },
+    where: { id: businessId },
     include: {
       socials: true,
       trustScoreHistories: {
@@ -37,11 +47,7 @@ export const getTrustScore = async (businessId: number) => {
   return { ...business, tier };
 };
 
-export const getTrustScoreHistory = async (
-  businessId: number,
-  page: number,
-  limit: number,
-) => {
+export const getTrustScoreHistory = async (businessId: number) => {
   const business = await prisma.business.findUnique({
     where: { id: businessId },
   });
@@ -50,27 +56,47 @@ export const getTrustScoreHistory = async (
     throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
   }
 
-  const skip = (page - 1) * limit;
-
-  const [history, total] = await Promise.all([
-    prisma.trustScoreHistory.findMany({
-      where: { businessId },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.trustScoreHistory.count({ where: { businessId } }),
-  ]);
+  const history = await prisma.trustScoreHistory.findMany({
+    where: { businessId },
+    orderBy: { createdAt: "desc" },
+  });
 
   return {
     history,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
   };
+};
+
+const buildScoreSummary = (
+  score: number,
+  positive: { reason: string | null; scoreIncrement: number }[],
+  negative: { reason: string | null; scoreIncrement: number }[],
+  tierName: string | null,
+): string => {
+  const parts: string[] = [];
+
+  parts.push(
+    `Your current trust score is ${score.toFixed(1)}${tierName ? ` (${tierName} tier)` : ""}.`,
+  );
+
+  if (positive.length > 0) {
+    parts.push(
+      `You have ${positive.length} positive event(s) contributing to your score.`,
+    );
+  }
+
+  if (negative.length > 0) {
+    parts.push(`${negative.length} event(s) have reduced your score recently.`);
+    const reasons = negative.map((e) => e.reason).filter(Boolean);
+    if (reasons.length > 0) {
+      parts.push(`Key reasons: ${reasons.slice(0, 3).join("; ")}.`);
+    }
+  }
+
+  if (positive.length === 0 && negative.length === 0) {
+    parts.push("No trust events have been recorded yet.");
+  }
+
+  return parts.join(" ");
 };
 
 export const getTrustScoreReason = async (businessId: number) => {
@@ -136,47 +162,4 @@ export const getAiProfile = async (businessId: number) => {
     profile: null,
     note: "AI profile generation pending integration",
   };
-};
-
-const getCurrentTier = async (score: number) => {
-  return prisma.tier.findFirst({
-    where: {
-      minScore: { lte: score },
-      OR: [{ maxScore: { gte: score } }, { maxScore: null }],
-    },
-    orderBy: { minScore: "desc" },
-  });
-};
-
-const buildScoreSummary = (
-  score: number,
-  positive: { reason: string | null; scoreIncrement: number }[],
-  negative: { reason: string | null; scoreIncrement: number }[],
-  tierName: string | null,
-): string => {
-  const parts: string[] = [];
-
-  parts.push(
-    `Your current trust score is ${score.toFixed(1)}${tierName ? ` (${tierName} tier)` : ""}.`,
-  );
-
-  if (positive.length > 0) {
-    parts.push(
-      `You have ${positive.length} positive event(s) contributing to your score.`,
-    );
-  }
-
-  if (negative.length > 0) {
-    parts.push(`${negative.length} event(s) have reduced your score recently.`);
-    const reasons = negative.map((e) => e.reason).filter(Boolean);
-    if (reasons.length > 0) {
-      parts.push(`Key reasons: ${reasons.slice(0, 3).join("; ")}.`);
-    }
-  }
-
-  if (positive.length === 0 && negative.length === 0) {
-    parts.push("No trust events have been recorded yet.");
-  }
-
-  return parts.join(" ");
 };
