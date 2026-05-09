@@ -6,8 +6,6 @@ import compression from "compression";
 import { env } from "./config/env";
 import { CustomError, HttpStatus } from "./@types";
 import { errorHandler } from "./utils/request-handlers";
-import { testDbConnection } from "./config/db";
-import { testCacheConnection } from "./config/redis";
 import setupSwaggerDocs from "./config/swagger";
 import router from "./routes";
 

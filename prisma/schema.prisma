@@ -18,9 +18,10 @@ model User {
   firstName String
   lastName  String
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  userAuth  UserAuth?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  businesses Business[]
+  userAuth   UserAuth?
 
   @@index([email], name: "idx_user_email")
   @@map("users")
@@ -47,9 +48,16 @@ model UserAuth {
 }
 
 model Business {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
+  id                     Int      @id @default(autoincrement())
+  ownerId                Int?
+  name                   String
+  description            String?
+  logo                   String?
+  showCaseImages         String[] @default([])
+  email                  String?
+  phoneNumber            String?
+  alternativePhoneNumber String?
+  category               String?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -61,9 +69,30 @@ model Business {
   trustScoreHistories TrustScoreHistory[]
   trustEntries        TrustEntry[]
   socials             Social[]
+  owner               User?               @relation(fields: [ownerId], references: [id])
 
+  kycStatus   KycStatus     @default(PENDING)
+  bankDetails BankDetails[]
+
+  @@index([ownerId], name: "idx_business_owner_id")
   @@index([name], name: "idx_business_name")
   @@map("businesses")
+}
+
+model BankDetails {
+  id            Int     @id @default(autoincrement())
+  businessId    Int
+  bankName      String
+  accountNumber String
+  accountName   String
+  isPrimary     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@map("bank_details")
 }
 
 model Social {
@@ -96,6 +125,7 @@ model BusinessKYC {
   businessId       Int
   url              String
   verificationType VerificationType
+  status           KycStatus        @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,6 +142,12 @@ enum VerificationType {
   UTILITY_BILL
   SELFIE
   OTHER
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model TrustScoreHistory {

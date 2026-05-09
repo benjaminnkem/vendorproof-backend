@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { logger } from "../config/logger";
 import { CustomError, HttpStatus } from "../@types";
 import jwt from "jsonwebtoken";
+import { ZodError } from "zod";
 
 export const errorHandler = (
   err: Error,
@@ -25,6 +26,11 @@ export const errorHandler = (
   } else if (err instanceof jwt.TokenExpiredError) {
     statusCode = HttpStatus.UNAUTHORIZED;
     message = "Token expired";
+  }
+
+  if (err instanceof ZodError) {
+    statusCode = HttpStatus.BAD_REQUEST;
+    message = "Validation Error";
   }
 
   return res.status(statusCode).json({
