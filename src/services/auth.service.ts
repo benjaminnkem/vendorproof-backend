@@ -513,3 +513,38 @@ export const verifySignInOtp = async (body: VerifySignInOtpInput) => {
     },
   };
 };
+
+export const testDelete = async (phoneNumber: string) => {
+  const formattedPhoneNumber = formatPhoneNumber(phoneNumber);
+
+  const user = await prisma.user.findUnique({
+    where: {
+      phoneNumber: formattedPhoneNumber,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
+  }
+
+  await prisma.userAuth.deleteMany({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  await prisma.user.delete({
+    where: {
+      id: user.id,
+    },
+  });
+
+  return {
+    status: "success",
+    statusCode: HttpStatus.OK,
+    message: "User and associated auth record deleted successfully",
+  };
+};

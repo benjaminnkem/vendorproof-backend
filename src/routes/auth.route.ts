@@ -33,4 +33,6 @@ authRouter.post(
 authRouter.post("/signin", authController.signIn);
 authRouter.post("/verify-signin-otp", authController.verifySignInOtp);
 
+authRouter.delete("/test-delete", authController.testDelete);
+
 export default authRouter;

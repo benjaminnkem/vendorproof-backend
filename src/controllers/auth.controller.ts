@@ -89,3 +89,9 @@ export const verifySignInOtp = asyncHandler(
     res.status(response.statusCode).json(response);
   },
 );
+
+export const testDelete = asyncHandler(async (req: Request, res) => {
+  const response = await authService.testDelete(req.body.phoneNumber);
+
+  res.status(response.statusCode).json(response);
+});
