@@ -7,3 +7,11 @@ export class CustomError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
+
+declare global {
+  namespace Express {
+    export interface Request {
+      userId?: number;
+    }
+  }
+}

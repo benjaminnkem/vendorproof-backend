@@ -1,8 +1,4 @@
-import {
-  KycQueueFilePayload,
-  KycVerificationDecision,
-  KycVerificationJobPayload,
-} from "../@types";
+import { KycVerificationDecision, KycVerificationJobPayload } from "../@types";
 import { prisma } from "../config/db";
 import { logger } from "../config/logger";
 import interswitchHttpService from "../infra/interswitch/http-service";
@@ -29,31 +25,6 @@ type SupportedVerificationType = "SELFIE" | "NIN" | "CAC" | "TIN";
 type KycRowMap = Partial<
   Record<SupportedVerificationType, { id: number; url: string | null }>
 >;
-
-const toCloudinaryUploadFile = (file: KycQueueFilePayload) => {
-  return {
-    buffer: Buffer.from(file.bufferBase64, "base64"),
-    mimetype: file.mimetype,
-    originalname: file.originalname,
-  };
-};
-
-const uploadKycFile = async (
-  file: KycQueueFilePayload | undefined,
-  folder: string,
-): Promise<string | undefined> => {
-  if (!file) {
-    return undefined;
-  }
-
-  const uploaded = await cloudinaryHttpService.uploadFile({
-    file: toCloudinaryUploadFile(file),
-    folder,
-    resourceType: "image",
-  });
-
-  return uploaded.url;
-};
 
 const upsertBusinessKycRow = async (params: {
   businessId: number;
@@ -521,13 +492,11 @@ const aggregateBusinessKycState = async (businessId: number) => {
 export const processBusinessKycVerificationJob = async (
   payload: KycVerificationJobPayload,
 ): Promise<{ decisions: KycVerificationDecision[] }> => {
-  const kycFolder = `vendorproof/businesses/${payload.businessSlug}/kyc`;
-
-  const [selfieUrl, idDocumentUrl, cacDocumentUrl] = await Promise.all([
-    uploadKycFile(payload.kycSelfie, kycFolder),
-    uploadKycFile(payload.kycIdDocument, kycFolder),
-    uploadKycFile(payload.kycBusinessCacDocument, kycFolder),
-  ]);
+  const [selfieUrl, idDocumentUrl, cacDocumentUrl] = [
+    payload.kycSelfie,
+    payload.kycIdDocument,
+    payload.kycBusinessCacDocument,
+  ];
 
   const rowMap: KycRowMap = {};
 

@@ -14,16 +14,19 @@ datasource db {
 }
 
 model User {
-  id          Int    @id @default(autoincrement())
-  email       String @unique
+  id          Int     @id @default(autoincrement())
+  email       String?
   firstName   String
   lastName    String
-  phoneNumber String @unique
+  phoneNumber String  @unique
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   businesses Business[]
   userAuth   UserAuth?
+
+  kycIdDocumentUrl String?
+  kycSelfieUrl     String?
 
   @@index([email], name: "idx_user_email")
   @@map("users")
@@ -49,6 +52,8 @@ model UserAuth {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  authStep Int? @default(1)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([passwordResetToken], name: "idx_password_reset_token")
@@ -56,18 +61,20 @@ model UserAuth {
 }
 
 model Business {
-  id                     Int      @id @default(autoincrement())
-  ownerId                Int?
-  name                   String
-  description            String?
-  logo                   String?
-  showCaseImages         String[] @default([])
-  email                  String?
-  phoneNumber            String?
-  alternativePhoneNumber String?
-  category               String?
-  slug                   String   @unique
-  nin                    String?
+  id                        Int      @id @default(autoincrement())
+  ownerId                   Int?
+  name                      String
+  description               String?
+  logo                      String?
+  showCaseImages            String[] @default([])
+  email                     String?
+  phoneNumber               String?
+  alternativePhoneNumber    String?
+  category                  String?
+  slug                      String   @unique
+  nin                       String?
+  kycBusinessCacDocumentUrl String?
+  kycBusinessTinNumber      String?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -95,6 +102,7 @@ model BankDetails {
   id            Int     @id @default(autoincrement())
   businessId    Int
   bankName      String
+  bankCode      String
   accountNumber String
   accountName   String
   isPrimary     Boolean @default(false)

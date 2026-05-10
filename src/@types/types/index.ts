@@ -2,12 +2,6 @@ export type NodeEnv = "development" | "production" | "local";
 
 export type UploadFileMap = Record<string, Express.Multer.File[]>;
 
-export type KycQueueFilePayload = {
-  bufferBase64: string;
-  mimetype: string;
-  originalname: string;
-};
-
 export type KycVerificationJobPayload = {
   businessId: number;
   userId: number;
@@ -16,9 +10,9 @@ export type KycVerificationJobPayload = {
   businessName: string;
   businessSlug: string;
   tinNumber?: string;
-  kycSelfie?: KycQueueFilePayload;
-  kycIdDocument?: KycQueueFilePayload;
-  kycBusinessCacDocument?: KycQueueFilePayload;
+  kycSelfie?: string;
+  kycIdDocument?: string;
+  kycBusinessCacDocument?: string;
 };
 
 export type KycVerificationDecision = {
@@ -27,4 +21,16 @@ export type KycVerificationDecision = {
   score?: number;
   reason?: string;
   metadata?: Record<string, unknown>;
+};
+
+export type QueueFilePayload = {
+  bufferBase64: string;
+  mimetype: string;
+  originalname: string;
+};
+
+export type UploadBusinessShowCaseImagesJobPayload = {
+  businessId: number;
+  folder: string;
+  files: QueueFilePayload[];
 };

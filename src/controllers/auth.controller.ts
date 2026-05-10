@@ -3,8 +3,14 @@ import { ZodError } from "zod";
 import { CustomError, HttpStatus, UploadFileMap } from "../@types";
 import asyncHandler from "../config/async-handler";
 import {
-  signUpSchema,
-  SignUpInput,
+  signUpStep1Schema,
+  SignUpStep1Input,
+  signUpStep2Schema,
+  SignUpStep2Input,
+  signUpStep3Schema,
+  SignUpStep3Input,
+  signUpStep4Schema,
+  SignUpStep4Input,
   signInSchema,
   SignInInput,
   verifySignInOtpSchema,
@@ -13,44 +19,64 @@ import {
 import * as authService from "../services/auth.service";
 import { parseJsonField } from "../utils";
 
-export const signUp = asyncHandler(async (req: Request, res) => {
-  let payload: SignUpInput;
+export const signUpStep1 = asyncHandler(async (req: Request, res) => {
+  const payload = signUpStep1Schema.parse(req.body);
 
+  const response = await authService.signUpStep1(payload);
+
+  res.status(response.statusCode).json(response);
+});
+
+export const signUpStep2 = asyncHandler(async (req: Request, res) => {
+  const payload = signUpStep2Schema.parse(req.body);
+
+  const response = await authService.signUpStep2(payload);
+
+  res.status(response.statusCode).json(response);
+});
+
+export const signUpStep3 = asyncHandler(async (req: Request, res) => {
   const files = (req.files ?? {}) as UploadFileMap;
 
-  const parsedBody: SignUpInput = {
+  const parsedBody = {
     ...req.body,
-    socials: parseJsonField(req.body.socials, []),
-    bankDetails: parseJsonField(req.body.bankDetails, req.body.bankDetails),
-    businessLogo: files.businessLogo?.[0],
-    businessShowCaseImages: files.businessShowCaseImages,
     kycSelfie: files.kycSelfie?.[0],
     kycIdDocument: files.kycIdDocument?.[0],
-    kycBusinessCacDocument: files.kycBusinessCacDocument?.[0],
   };
 
-  payload = signUpSchema.parse(parsedBody) as SignUpInput;
+  const payload = signUpStep3Schema.parse(parsedBody) as SignUpStep3Input;
 
-  await authService.signUp(payload);
+  const response = await authService.signUpStep3(req.userId!, payload);
 
-  res.status(HttpStatus.CREATED).json({
-    status: "success",
-    statusCode: HttpStatus.CREATED,
-    message: "Account created successfully",
-  });
+  res.status(response.statusCode).json(response);
+});
+
+export const signUpStep4 = asyncHandler(async (req: Request, res) => {
+  const files = (req.files ?? {}) as UploadFileMap;
+
+  const parsedBody = {
+    ...req.body,
+    businessShowCaseImages: files.businessShowCaseImages,
+    businessLogo: files.businessLogo?.[0],
+    kycBusinessCacDocument: files.kycBusinessCacDocument?.[0],
+    bankDetails: parseJsonField(req.body.bankDetails, req.body.bankDetails),
+    socials: parseJsonField(req.body.socials, []),
+  };
+
+  const payload = signUpStep4Schema.parse(parsedBody) as SignUpStep4Input;
+
+  const response = await authService.signUpStep4(req.userId!, payload);
+
+  res.status(response.statusCode).json(response);
 });
 
 export const signIn = asyncHandler(
   async (req: Request<{}, {}, SignInInput>, res) => {
     const parsed = signInSchema.parse(req.body);
 
-    await authService.signIn(parsed?.phoneNumber);
+    const response = await authService.signIn(parsed?.phoneNumber);
 
-    res.status(HttpStatus.OK).json({
-      status: "success",
-      statusCode: HttpStatus.OK,
-      message: "OTP sent to registered phone number",
-    });
+    res.status(response.statusCode).json(response);
   },
 );
 
@@ -60,11 +86,6 @@ export const verifySignInOtp = asyncHandler(
 
     const response = await authService.verifySignInOtp(parsed);
 
-    res.status(HttpStatus.OK).json({
-      status: "success",
-      statusCode: HttpStatus.OK,
-      message: "OTP verified successfully",
-      data: response,
-    });
+    res.status(response.statusCode).json(response);
   },
 );

@@ -3,158 +3,16 @@ info:
   title: VendorProof API
   version: 1.0.0
   description: API documentation for the VendorProof backend.
+tags:
+  - name: Auth
+  - name: Config
+  - name: System
+  - name: Triangle
 paths:
-  /api/auth/signup:
+  /api/auth/signup/step-1:
     post:
-      summary: Register a new vendor account and business profile
-      tags:
-        - Auth
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - firstName
-                - lastName
-                - email
-                - phoneNumber
-                - businessName
-              properties:
-                firstName:
-                  type: string
-                  example: Ada
-                lastName:
-                  type: string
-                  example: Okafor
-                email:
-                  type: string
-                  format: email
-                  example: ada@vendorproof.app
-                phoneNumber:
-                  type: string
-                  example: +2348012345678
-                businessName:
-                  type: string
-                  example: Ada Groceries Ltd
-                businessDescription:
-                  type: string
-                  example: Retail grocery supplier for households and restaurants.
-                businessEmail:
-                  type: string
-                  format: email
-                  example: hello@adagroceries.com
-                businessPhoneNumber:
-                  type: string
-                  example: +2348012345678
-                businessAlternativePhoneNumber:
-                  type: string
-                  example: +2348098765432
-                businessCategory:
-                  type: string
-                  example: Retail
-                socials:
-                  type: string
-                  description: JSON string array of socials.
-                  example: '[{"platform":"INSTAGRAM","url":"https://instagram.com/adagroceries"}]'
-                bankDetails:
-                  type: string
-                  description: JSON string object for bank details.
-                  example: '{"accountName":"Ada Groceries Ltd","accountNumber":"0123456789","bankName":"Mock Bank","bankCode":"999"}'
-                businessLogo:
-                  type: string
-                  format: binary
-                  description: Single business logo image.
-                businessShowCaseImages:
-                  type: array
-                  description: Up to 10 showcase images.
-                  items:
-                    type: string
-                    format: binary
-                kycSelfie:
-                  type: string
-                  format: binary
-                  description: Personal selfie for KYC verification.
-                kycIdDocument:
-                  type: string
-                  format: binary
-                  description: NIN or other valid identity document image.
-                kycBusinessCacDocument:
-                  type: string
-                  format: binary
-                  description: CAC document image for business verification.
-                kycBusinessTinNumber:
-                  type: string
-                  description: TIN value used when CAC document is not provided.
-                  example: 12345678-0001
-      responses:
-        "201":
-          description: Account created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  statusCode:
-                    type: integer
-                    example: 201
-                  message:
-                    type: string
-                    example: Account created successfully
-        "400":
-          description: Validation failure or duplicate email
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 400
-                  message:
-                    type: string
-                    example: Email already exists
-        "422":
-          description: Schema validation error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 422
-                  message:
-                    type: string
-                    example: Validation failed
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        path:
-                          type: array
-                          items:
-                            type: string
-                        message:
-                          type: string
-      description: >-
-        Creates user and business records. KYC files and TIN are accepted at signup,
-        then processed asynchronously by the BullMQ KYC queue.
-
-  /api/auth/signin:
-    post:
-      summary: Request login OTP with phone number
+      summary: Start signup and send OTP
+      description: Creates a user profile and sends a verification OTP to the phone number.
       tags:
         - Auth
       requestBody:
@@ -162,77 +20,30 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - phoneNumber
-              properties:
-                phoneNumber:
-                  type: string
-                  example: +2348012345678
+              $ref: "#/components/schemas/SignUpStep1Request"
       responses:
         "200":
-          description: OTP sent to registered phone number
+          description: OTP sent successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  statusCode:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: OTP sent to registered phone number
-        "404":
-          description: User not found for the supplied phone number
+                $ref: "#/components/schemas/SignUpStep1SuccessResponse"
+        "400":
+          description: Duplicate user data
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 404
-                  message:
-                    type: string
-                    example: User not found
-        "422":
-          description: Schema validation error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 422
-                  message:
-                    type: string
-                    example: Validation failed
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        path:
-                          type: array
-                          items:
-                            type: string
-                        message:
-                          type: string
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: Email or phone number already exists, login instead.
+                timestamp: "2026-05-10T12:00:00.000Z"
 
-  /api/auth/verify-signin-otp:
+  /api/auth/signup/step-2:
     post:
-      summary: Verify login OTP and issue access token
+      summary: Verify signup OTP
+      description: Verifies OTP from step 1 and returns an access token with the next signup step.
       tags:
         - Auth
       requestBody:
@@ -240,99 +51,187 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - phoneNumber
-                - otp
-              properties:
-                phoneNumber:
-                  type: string
-                  example: +2348012345678
-                otp:
-                  type: string
-                  example: "123456"
+              $ref: "#/components/schemas/SignUpStep2Request"
       responses:
         "200":
           description: OTP verified successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  statusCode:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: OTP verified successfully
-                  data:
-                    type: object
-                    properties:
-                      accessToken:
-                        type: string
-                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                $ref: "#/components/schemas/SignUpStep2SuccessResponse"
         "401":
-          description: OTP is invalid or expired
+          description: Invalid or expired OTP
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 401
-                  message:
-                    type: string
-                    example: Invalid OTP
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidOtp:
+                  value:
+                    status: error
+                    statusCode: 401
+                    message: Invalid OTP
+                    timestamp: "2026-05-10T12:00:00.000Z"
+                expiredOtp:
+                  value:
+                    status: error
+                    statusCode: 401
+                    message: OTP has expired
+                    timestamp: "2026-05-10T12:00:00.000Z"
         "404":
-          description: User not found for the supplied phone number
+          description: User not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 404
-                  message:
-                    type: string
-                    example: User not found
-        "422":
-          description: Schema validation error
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: User not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/auth/signup/step-3:
+    post:
+      summary: Upload personal KYC documents
+      description: Uploads selfie and identity document as part of signup.
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SignUpStep3Request"
+      responses:
+        "200":
+          description: KYC documents uploaded
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: error
-                  statusCode:
-                    type: integer
-                    example: 422
-                  message:
-                    type: string
-                    example: Validation failed
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        path:
-                          type: array
-                          items:
-                            type: string
-                        message:
-                          type: string
+                $ref: "#/components/schemas/SignUpStep3SuccessResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/signup/step-4:
+    post:
+      summary: Complete business profile and finalize signup
+      description: Creates business profile, optional socials and bank details, and returns access token.
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SignUpStep4Request"
+      responses:
+        "201":
+          description: Business created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignUpStep4SuccessResponse"
+        "400":
+          description: Business name already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: Another business with the same name already exists, please choose a different name.
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/signin:
+    post:
+      summary: Request signin OTP
+      description: Sends login OTP. If signup is incomplete, response may include a next step.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignInRequest"
+      responses:
+        "200":
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SignInSuccessResponse"
+                  - $ref: "#/components/schemas/SignInIncompleteSignupResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/verify-signin-otp:
+    post:
+      summary: Verify signin OTP
+      description: Verifies OTP and returns access token. If profile completion is pending, includes nextStep.
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifySignInOtpRequest"
+      responses:
+        "200":
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/VerifySignInOtpSuccessResponse"
+                  - $ref: "#/components/schemas/VerifySignInOtpIncompleteSignupResponse"
+        "401":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/config:
+    get:
+      summary: Get frontend configuration values
+      tags:
+        - Config
+      responses:
+        "200":
+          description: Configurations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetConfigsSuccessResponse"
+
   /api/health:
     get:
       summary: Health check endpoint
@@ -344,82 +243,439 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  statusCode:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: API is healthy
-                  data:
-                    nullable: true
-                    example: null
+                $ref: "#/components/schemas/HealthSuccessResponse"
         "500":
           description: Service is unhealthy
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: API health check failed
-                  statusCode:
-                    type: integer
-                    example: 500
-                  timestamp:
-                    type: string
-                    format: date-time
-  /api/config:
-    get:
-      summary: Get frontend configuration values
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 500
+                message: API health check failed
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/triangle/area:
+    post:
+      summary: Calculate triangle area
       tags:
-        - Config
+        - Triangle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriangleAreaRequest"
       responses:
         "200":
-          description: Configuration values retrieved successfully
+          description: Triangle area calculated successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  statusCode:
-                    type: integer
-                    example: 200
-                  message:
-                    type: string
-                    example: Configurations retrieved successfully
-                  data:
-                    type: object
-                    properties:
-                      tierNames:
-                        type: array
-                        items:
-                          type: string
-                        example:
-                          - FREE
-                          - BASIC
-                          - PREMIUM
-                      socials:
-                        type: array
-                        items:
-                          type: string
-                        example:
-                          - TWITTER
-                          - INSTAGRAM
-                          - LINKEDIN
-                      businessVerificationTypes:
-                        type: array
-                        items:
-                          type: string
-                        example:
-                          - CAC
-                          - SELFIE
-                          - UTILITY_BILL
+                $ref: "#/components/schemas/TriangleAreaSuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Validation Error
+        timestamp:
+          type: string
+          format: date-time
+
+    SignUpStep1Request:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - phoneNumber
+      properties:
+        firstName:
+          type: string
+          example: Ada
+        lastName:
+          type: string
+          example: Okafor
+        email:
+          type: string
+          format: email
+          example: ada@vendorproof.app
+        phoneNumber:
+          type: string
+          example: +2348012345678
+
+    SignUpStep1SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OTP sent to registered phone number
+        data:
+          type: object
+          properties:
+            nextStep:
+              type: integer
+              example: 2
+
+    SignUpStep2Request:
+      type: object
+      required:
+        - phoneNumber
+        - otpCode
+      properties:
+        phoneNumber:
+          type: string
+          example: +2348012345678
+        otpCode:
+          type: string
+          example: "123456"
+
+    SignUpStep2SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OTP verified successfully
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+            nextStep:
+              type: integer
+              example: 3
+
+    SignUpStep3Request:
+      type: object
+      properties:
+        kycSelfie:
+          type: string
+          format: binary
+          description: Personal selfie image for KYC.
+        kycIdDocument:
+          type: string
+          format: binary
+          description: Identity document image for KYC.
+
+    SignUpStep3SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: KYC documents uploaded successfully
+        data:
+          type: object
+          properties:
+            nextStep:
+              type: integer
+              example: 4
+
+    SignUpStep4Request:
+      type: object
+      required:
+        - businessName
+      properties:
+        businessName:
+          type: string
+          example: Ada Groceries Ltd
+        businessDescription:
+          type: string
+          example: Retail grocery supplier for households and restaurants.
+        businessEmail:
+          type: string
+          format: email
+          example: hello@adagroceries.com
+        businessPhoneNumber:
+          type: string
+          example: +2348012345678
+        businessAlternativePhoneNumber:
+          type: string
+          example: +2348098765432
+        businessCategory:
+          type: string
+          example: Retail
+        socials:
+          type: string
+          description: JSON string array of socials.
+          example: '[{"platform":"INSTAGRAM","url":"https://instagram.com/adagroceries"}]'
+        bankDetails:
+          type: string
+          description: JSON string object for bank details.
+          example: '{"accountName":"Ada Groceries Ltd","accountNumber":"0123456789","bankName":"Mock Bank","bankCode":"999"}'
+        businessLogo:
+          type: string
+          format: binary
+          description: Single business logo image.
+        businessShowCaseImages:
+          type: array
+          description: Up to 10 showcase images.
+          items:
+            type: string
+            format: binary
+        kycBusinessCacDocument:
+          type: string
+          format: binary
+          description: CAC document image for business verification.
+        kycBusinessTinNumber:
+          type: string
+          description: TIN value used when CAC document is not provided.
+          example: 12345678-0001
+
+    SignUpStep4SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        message:
+          type: string
+          example: Business created successfully
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    SignInRequest:
+      type: object
+      required:
+        - phoneNumber
+      properties:
+        phoneNumber:
+          type: string
+          example: +2348012345678
+
+    SignInSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OTP sent to your phone number
+
+    SignInIncompleteSignupResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OTP sent to registered phone number
+        data:
+          type: object
+          properties:
+            nextStep:
+              type: integer
+              example: 2
+
+    VerifySignInOtpRequest:
+      type: object
+      required:
+        - phoneNumber
+        - otp
+      properties:
+        phoneNumber:
+          type: string
+          example: +2348012345678
+        otp:
+          type: string
+          example: "123456"
+
+    VerifySignInOtpSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: OTP verified successfully
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    VerifySignInOtpIncompleteSignupResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Please complete your profile by providing KYC documents
+        data:
+          type: object
+          properties:
+            nextStep:
+              type: integer
+              enum:
+                - 3
+                - 4
+              example: 3
+            accessToken:
+              type: string
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    GetConfigsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Configurations retrieved successfully
+        data:
+          type: object
+          properties:
+            tierNames:
+              type: array
+              items:
+                type: string
+              example:
+                - UNVERIFIED
+                - BRONZE
+                - SILVER
+                - GOLD
+                - PLATINUM
+                - DIAMOND
+            socials:
+              type: array
+              items:
+                type: string
+              example:
+                - FACEBOOK
+                - TWITTER
+                - LINKEDIN
+                - INSTAGRAM
+                - TIKTOK
+                - YOUTUBE
+                - WEBSITE
+                - OTHER
+            businessVerificationTypes:
+              type: array
+              items:
+                type: string
+              example:
+                - CAC
+                - NIN
+                - UTILITY_BILL
+                - SELFIE
+                - TIN
+                - OTHER
+
+    HealthSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: API is healthy
+        data:
+          nullable: true
+          example: null
+
+    TriangleAreaRequest:
+      type: object
+      required:
+        - base
+        - height
+      properties:
+        base:
+          type: number
+          example: 10
+        height:
+          type: number
+          example: 5
+
+    TriangleAreaSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Triangle area calculated successfully
+        data:
+          type: object
+          properties:
+            area:
+              type: number
+              example: 25
+        meta:
+          nullable: true
+          example: null
