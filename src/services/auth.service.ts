@@ -70,6 +70,9 @@ const step1Action = async (phoneNumber: string) => {
     data: {
       nextStep: 2,
     },
+    meta: {
+      otp,
+    },
   };
 };
 
@@ -439,6 +442,9 @@ export const signIn = async (phoneNumber: string) => {
     status: "success",
     statusCode: HttpStatus.OK,
     message: "OTP sent to your phone number",
+    meta: {
+      otp,
+    },
   };
 };
 
@@ -547,5 +553,48 @@ export const testDelete = async (phoneNumber: string) => {
     status: "success",
     statusCode: HttpStatus.OK,
     message: "User and associated auth record deleted successfully",
+  };
+};
+
+export const getUser = async (userId: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phoneNumber: true,
+      businesses: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logo: true,
+          kycStatus: true,
+          showCaseImages: true,
+          socials: true,
+          category: true,
+          trustScore: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
+  }
+
+  const data = {
+    ...user,
+    businesses: undefined,
+    business: user.businesses.length > 0 ? user.businesses[0] : null,
+  };
+
+  return {
+    status: "success",
+    statusCode: HttpStatus.OK,
+    message: "User retrieved successfully",
+    data: user,
   };
 };

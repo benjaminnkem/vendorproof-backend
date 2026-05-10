@@ -95,3 +95,9 @@ export const testDelete = asyncHandler(async (req: Request, res) => {
 
   res.status(response.statusCode).json(response);
 });
+
+export const getUser = asyncHandler(async (req: Request, res) => {
+  const response = await authService.getUser(req.userId!);
+
+  res.status(response.statusCode).json(response);
+});

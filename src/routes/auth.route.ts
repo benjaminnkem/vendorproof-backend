@@ -35,4 +35,6 @@ authRouter.post("/verify-signin-otp", authController.verifySignInOtp);
 
 authRouter.delete("/test-delete", authController.testDelete);
 
+authRouter.get("/user", authMiddleware, authController.getUser);
+
 export default authRouter;
