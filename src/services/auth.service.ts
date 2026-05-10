@@ -278,6 +278,7 @@ export const signUpStep4 = async (
 
   const createdBusiness = await prisma.business.create({
     data: {
+      isRegistered: payload.isBusinessRegistered,
       ownerId: userId,
       name: payload.businessName,
       description: payload.businessDescription!,

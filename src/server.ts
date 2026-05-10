@@ -5,6 +5,7 @@ import { logger } from "./config/logger";
 import { closeCacheConnection } from "./config/redis";
 
 import { closeAllQueues } from "./queues";
+import { runSeeds } from "./utils/seeds";
 
 const closeServer = async () => {
   logger.info("Shutting down server...");
@@ -19,6 +20,8 @@ const closeServer = async () => {
 
 const initServer = async () => {
   try {
+    await runSeeds();
+
     app.listen(env.PORT, () => {
       logger.logBrand();
 

@@ -75,6 +75,7 @@ model Business {
   nin                       String?
   kycBusinessCacDocumentUrl String?
   kycBusinessTinNumber      String?
+  isRegistered              Boolean  @default(false)
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

@@ -1,4 +1,4 @@
-import { any, array, email, enum as enum_, object, string } from "zod";
+import { any, array, boolean, email, enum as enum_, object, string } from "zod";
 import { SocialPlatform } from "../generated/prisma/enums";
 import { formatPhoneNumber } from "../utils";
 
@@ -27,6 +27,7 @@ export const signUpStep3Schema = object({
 });
 
 export const signUpStep4Schema = object({
+  isBusinessRegistered: boolean().optional().default(false),
   businessName: string().min(1, "Business name is required"),
   businessDescription: string().optional(),
   businessEmail: email("Invalid business email address").optional(),

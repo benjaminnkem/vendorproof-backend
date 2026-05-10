@@ -6,10 +6,10 @@ type WeightedScoreInput = {
 };
 
 const WEIGHTS = {
-  selfie: 30,
-  nin: 30,
-  cac: 25,
-  tin: 15,
+  selfie: 10,
+  nin: 10,
+  cac: 20,
+  tin: 10,
 } as const;
 
 const clamp = (value: number, min = 0, max = 1): number => {

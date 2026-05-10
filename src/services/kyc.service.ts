@@ -408,6 +408,21 @@ const verifyTin = async (params: {
   };
 };
 
+const getBusinessTierByScore = async (score: number): Promise<number> => {
+  return await prisma.tier
+    .findMany({
+      orderBy: {
+        minScore: "asc",
+      },
+    })
+    .then((tiers) => {
+      const tier = tiers.find(
+        (t) => score >= t.minScore && score <= (t.maxScore ?? 100),
+      );
+      return tier?.id!;
+    });
+};
+
 const aggregateBusinessKycState = async (businessId: number) => {
   const rows = await prisma.businessKYC.findMany({
     where: {
@@ -472,12 +487,15 @@ const aggregateBusinessKycState = async (businessId: number) => {
       ? KycStatus.REJECTED
       : KycStatus.PENDING;
 
+  const tierId = await getBusinessTierByScore(trustScore);
+
   await prisma.$transaction([
     prisma.business.update({
       where: { id: businessId },
       data: {
         kycStatus,
         trustScore,
+        tierId,
       },
     }),
     prisma.trustScoreHistory.create({
