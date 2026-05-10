@@ -5,6 +5,7 @@ info:
   description: API documentation for the VendorProof backend.
 tags:
   - name: Auth
+  - name: Business
   - name: Config
   - name: System
   - name: Triangle
@@ -258,6 +259,249 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /api/auth/user:
+    get:
+      summary: Get authenticated user profile
+      description: Returns the authenticated user's profile along with their associated businesses.
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserSuccessResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/business/{slug}:
+    get:
+      summary: Get public business profile
+      description: Returns the public profile of a business by its slug. No authentication required.
+      tags:
+        - Business
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            example: ada-groceries-ltd
+      responses:
+        "200":
+          description: Business profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicProfileSuccessResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Business not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me:
+    patch:
+      summary: Update authenticated business profile
+      description: Updates the business profile of the currently authenticated user. All fields are optional.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateBusinessRequest"
+      responses:
+        "200":
+          description: Business updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBusinessSuccessResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/business/me/socials:
+    post:
+      summary: Add a social link
+      description: Adds a new social media link to the authenticated business. Each platform can only have one entry.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSocialRequest"
+      responses:
+        "201":
+          description: Social link added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddSocialSuccessResponse"
+        "400":
+          description: Platform already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: A INSTAGRAM link already exists. Update or remove it first.
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/socials/{id}:
+    delete:
+      summary: Remove a social link
+      description: Deletes a social media link by its ID from the authenticated business.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Social link removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveSocialSuccessResponse"
+        "404":
+          description: Social link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Social link not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/bank-details:
+    post:
+      summary: Add bank details
+      description: Adds a new bank account to the authenticated business. Setting isPrimary to true will demote all other accounts.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBankDetailsRequest"
+      responses:
+        "201":
+          description: Bank details added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddBankDetailsSuccessResponse"
+
+  /api/business/me/bank-details/{id}:
+    patch:
+      summary: Update bank details
+      description: Updates an existing bank account entry by ID. All fields are optional.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBankDetailsRequest"
+      responses:
+        "200":
+          description: Bank details updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBankDetailsSuccessResponse"
+        "404":
+          description: Bank details not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Bank details not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+    delete:
+      summary: Remove bank details
+      description: Deletes a bank account entry by ID from the authenticated business.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Bank details removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveBankDetailsSuccessResponse"
+        "404":
+          description: Bank details not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Bank details not found
+                timestamp: "2026-05-10T12:00:00.000Z"
 
   /api/config:
     get:
@@ -719,3 +963,424 @@ components:
         meta:
           nullable: true
           example: null
+
+    GetUserSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            firstName:
+              type: string
+              example: Ada
+            lastName:
+              type: string
+              example: Okafor
+            email:
+              type: string
+              format: email
+              example: ada@vendorproof.app
+            phoneNumber:
+              type: string
+              example: +2348012345678
+            businesses:
+              type: array
+              items:
+                $ref: "#/components/schemas/BusinessSummary"
+
+    BusinessSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Ada Groceries Ltd
+        slug:
+          type: string
+          example: ada-groceries-ltd
+        logo:
+          type: string
+          nullable: true
+          example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+        kycStatus:
+          type: string
+          example: PENDING
+        showCaseImages:
+          type: array
+          items:
+            type: string
+          example:
+            - https://res.cloudinary.com/demo/image/upload/img1.jpg
+        socials:
+          type: array
+          items:
+            $ref: "#/components/schemas/Social"
+        category:
+          type: string
+          nullable: true
+          example: Retail
+        trustScore:
+          type: number
+          example: 72.5
+
+    Social:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        platform:
+          type: string
+          example: INSTAGRAM
+        url:
+          type: string
+          example: https://instagram.com/adagroceries
+
+    BankDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        bankName:
+          type: string
+          example: Mock Bank
+        accountNumber:
+          type: string
+          example: "0123456789"
+        accountName:
+          type: string
+          example: Ada Groceries Ltd
+        isPrimary:
+          type: boolean
+          example: true
+
+    GetPublicProfileSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Ada Groceries Ltd
+            description:
+              type: string
+              nullable: true
+              example: Retail grocery supplier for households and restaurants.
+            logo:
+              type: string
+              nullable: true
+              example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+            showCaseImages:
+              type: array
+              items:
+                type: string
+              example:
+                - https://res.cloudinary.com/demo/image/upload/img1.jpg
+            email:
+              type: string
+              nullable: true
+              example: hello@adagroceries.com
+            phoneNumber:
+              type: string
+              nullable: true
+              example: +2348012345678
+            alternativePhoneNumber:
+              type: string
+              nullable: true
+              example: +2348098765432
+            category:
+              type: string
+              nullable: true
+              example: Retail
+            slug:
+              type: string
+              example: ada-groceries-ltd
+            trustScore:
+              type: number
+              example: 72.5
+            kycStatus:
+              type: string
+              example: PENDING
+            paymentLink:
+              type: string
+              nullable: true
+              example: https://pay.vendorproof.app/ada-groceries-ltd
+            qrCodeUrl:
+              type: string
+              nullable: true
+              example: https://res.cloudinary.com/demo/image/upload/qr.png
+            createdAt:
+              type: string
+              format: date-time
+              example: "2026-01-15T09:00:00.000Z"
+            socials:
+              type: array
+              items:
+                $ref: "#/components/schemas/Social"
+            tier:
+              type: object
+              nullable: true
+              properties:
+                name:
+                  type: string
+                  example: BRONZE
+                description:
+                  type: string
+                  nullable: true
+                  example: Entry-level verified vendor
+            trustScoreHistories:
+              type: array
+              items:
+                type: object
+                properties:
+                  score:
+                    type: number
+                    example: 68.0
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2026-04-01T10:00:00.000Z"
+
+    UpdateBusinessRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Ada Groceries Ltd
+        description:
+          type: string
+          example: Retail grocery supplier for households and restaurants.
+        email:
+          type: string
+          format: email
+          example: hello@adagroceries.com
+        phoneNumber:
+          type: string
+          example: +2348012345678
+        alternativePhoneNumber:
+          type: string
+          example: +2348098765432
+        category:
+          type: string
+          example: Retail
+        businessLogo:
+          type: string
+          format: binary
+          description: Replaces the current business logo.
+        businessShowCaseImages:
+          type: array
+          description: Replaces all current showcase images. Up to 10 images.
+          items:
+            type: string
+            format: binary
+
+    UpdateBusinessSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            name:
+              type: string
+              example: Ada Groceries Ltd
+            slug:
+              type: string
+              example: ada-groceries-ltd
+            description:
+              type: string
+              nullable: true
+              example: Retail grocery supplier for households and restaurants.
+            email:
+              type: string
+              nullable: true
+              example: hello@adagroceries.com
+            phoneNumber:
+              type: string
+              nullable: true
+              example: +2348012345678
+            alternativePhoneNumber:
+              type: string
+              nullable: true
+              example: +2348098765432
+            category:
+              type: string
+              nullable: true
+              example: Retail
+            logo:
+              type: string
+              nullable: true
+              example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+            showCaseImages:
+              type: array
+              items:
+                type: string
+              example:
+                - https://res.cloudinary.com/demo/image/upload/img1.jpg
+            kycStatus:
+              type: string
+              example: PENDING
+            trustScore:
+              type: number
+              example: 72.5
+
+    AddSocialRequest:
+      type: object
+      required:
+        - platform
+        - url
+      properties:
+        platform:
+          type: string
+          enum:
+            - FACEBOOK
+            - TWITTER
+            - LINKEDIN
+            - INSTAGRAM
+            - TIKTOK
+            - YOUTUBE
+            - WEBSITE
+            - OTHER
+          example: INSTAGRAM
+        url:
+          type: string
+          format: uri
+          example: https://instagram.com/adagroceries
+
+    AddSocialSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          $ref: "#/components/schemas/Social"
+
+    RemoveSocialSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Social link removed
+
+    AddBankDetailsRequest:
+      type: object
+      required:
+        - bankName
+        - accountNumber
+        - accountName
+      properties:
+        bankName:
+          type: string
+          example: Mock Bank
+        accountNumber:
+          type: string
+          minLength: 10
+          example: "0123456789"
+        accountName:
+          type: string
+          example: Ada Groceries Ltd
+        isPrimary:
+          type: string
+          enum:
+            - "true"
+            - "false"
+          description: Pass "true" to set as the primary account. Demotes all others.
+          example: "true"
+
+    AddBankDetailsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          $ref: "#/components/schemas/BankDetails"
+
+    UpdateBankDetailsRequest:
+      type: object
+      properties:
+        bankName:
+          type: string
+          example: Mock Bank
+        accountNumber:
+          type: string
+          minLength: 10
+          example: "0123456789"
+        accountName:
+          type: string
+          example: Ada Groceries Ltd
+        isPrimary:
+          type: string
+          enum:
+            - "true"
+            - "false"
+          description: Pass "true" to promote this account as primary. Demotes all others.
+          example: "true"
+
+    UpdateBankDetailsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/BankDetails"
+
+    RemoveBankDetailsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Bank details removed
