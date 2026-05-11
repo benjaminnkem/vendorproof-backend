@@ -79,6 +79,21 @@ export const initiatePayment = asyncHandler(
   },
 );
 
+export const verifyPayment = asyncHandler(
+  async (req: Request, res: Response) => {
+    const data = await paymentService.verifyPayment(req.params["squadRef"] as string);
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, data });
+  },
+);
+
+export const squadWebhook = asyncHandler(
+  async (req: Request, res: Response) => {
+    const signature = req.headers["x-squad-encrypted-body"] as string;
+    await paymentService.handleSquadWebhook((req as any).rawBody, signature);
+    res.status(HttpStatus.OK).json({ status: "success" });
+  },
+);
+
 export const getRatingPage = asyncHandler(
   async (req: Request, res: Response) => {
     const data = await paymentService.getRatingPage(req.params["ratingToken"] as string);

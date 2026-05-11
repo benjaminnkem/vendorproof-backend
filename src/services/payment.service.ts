@@ -1,7 +1,9 @@
 import { addHours, addDays } from "date-fns";
 import { CustomError, HttpStatus } from "../@types";
 import { prisma } from "../config/db";
+import { env } from "../config/env";
 import { generateToken } from "../utils";
+import * as squadService from "./squad.service";
 import {
   CreateServiceInput,
   UpdateServiceInput,
@@ -302,6 +304,7 @@ export const initiatePayment = async (
   }
 
   const ratingToken = generateToken();
+  const squadRef = generateToken();
   const ratingTokenExpiresAt = payload.isServiceRendered
     ? addDays(new Date(), 7)
     : addDays(new Date(), 30);
@@ -316,17 +319,18 @@ export const initiatePayment = async (
       isServiceRendered: payload.isServiceRendered ?? false,
       ratingToken,
       ratingTokenExpiresAt,
+      squadRef,
       status: "PENDING",
     },
-    select: {
-      id: true,
-      buyerName: true,
-      buyerEmail: true,
-      amount: true,
-      isServiceRendered: true,
-      ratingToken: true,
-      status: true,
-    },
+    select: { id: true, amount: true, isServiceRendered: true },
+  });
+
+  const squadResult = await squadService.initializeTransaction({
+    email: payload.buyerEmail,
+    amount,
+    transactionRef: squadRef,
+    customerName: payload.buyerName,
+    callbackUrl: `${env.APP_BASE_URL}/pay/verify/${squadRef}`,
   });
 
   if (link.isOneTime) {
@@ -339,12 +343,103 @@ export const initiatePayment = async (
   return {
     paymentId: payment.id,
     amount: payment.amount,
-    isServiceRendered: payment.isServiceRendered,
-    ratingToken: payment.isServiceRendered ? payment.ratingToken : undefined,
-    message: payment.isServiceRendered
-      ? "Payment recorded. You can rate this vendor now."
-      : "Payment recorded. You will receive an email to rate this vendor after the service is delivered.",
+    checkoutUrl: squadResult.checkoutUrl,
+    message: "Proceed to checkout to complete your payment.",
   };
+};
+
+export const verifyPayment = async (squadRef: string) => {
+  const payment = await prisma.payment.findUnique({
+    where: { squadRef },
+    select: {
+      id: true,
+      status: true,
+      amount: true,
+      isServiceRendered: true,
+      ratingToken: true,
+      business: { select: { name: true, slug: true } },
+    },
+  });
+
+  if (!payment) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "Payment not found");
+  }
+
+  if (payment.status === "COMPLETED") {
+    return {
+      status: "COMPLETED",
+      business: payment.business,
+      ratingToken: payment.isServiceRendered ? payment.ratingToken : undefined,
+      message: payment.isServiceRendered
+        ? "Payment confirmed. You can rate this vendor now."
+        : "Payment confirmed. You will receive a link to rate this vendor after the service is delivered.",
+    };
+  }
+
+  if (payment.status === "FAILED") {
+    throw new CustomError(HttpStatus.BAD_REQUEST, "Payment failed");
+  }
+
+  // Re-verify with Squad in case webhook hasn't fired yet
+  const squadTx = await squadService.verifyTransaction(squadRef);
+
+  if (squadTx.transaction_status === "success") {
+    await confirmPayment(squadRef);
+    const updated = await prisma.payment.findUnique({
+      where: { squadRef },
+      select: { isServiceRendered: true, ratingToken: true, business: { select: { name: true, slug: true } } },
+    });
+
+    return {
+      status: "COMPLETED",
+      business: updated?.business,
+      ratingToken: updated?.isServiceRendered ? updated.ratingToken : undefined,
+      message: updated?.isServiceRendered
+        ? "Payment confirmed. You can rate this vendor now."
+        : "Payment confirmed. You will receive a link to rate this vendor after the service is delivered.",
+    };
+  }
+
+  return { status: payment.status, message: "Payment is still pending." };
+};
+
+const confirmPayment = async (squadRef: string) => {
+  await prisma.payment.update({
+    where: { squadRef },
+    data: { status: "COMPLETED" },
+  });
+};
+
+export const handleSquadWebhook = async (
+  rawBody: string,
+  signature: string,
+) => {
+  if (!squadService.verifyWebhookSignature(rawBody, signature)) {
+    throw new CustomError(HttpStatus.UNAUTHORIZED, "Invalid webhook signature");
+  }
+
+  const event = JSON.parse(rawBody) as {
+    Event: string;
+    Body: { transaction_ref: string; transaction_status: string };
+  };
+
+  const { transaction_ref, transaction_status } = event.Body;
+
+  const payment = await prisma.payment.findUnique({
+    where: { squadRef: transaction_ref },
+    select: { id: true, status: true },
+  });
+
+  if (!payment || payment.status !== "PENDING") return;
+
+  if (event.Event === "charge_successful" && transaction_status === "success") {
+    await confirmPayment(transaction_ref);
+  } else if (transaction_status === "failed") {
+    await prisma.payment.update({
+      where: { squadRef: transaction_ref },
+      data: { status: "FAILED" },
+    });
+  }
 };
 
 export const getRatingPage = async (ratingToken: string) => {

@@ -1,0 +1,67 @@
+import axios from "axios";
+import crypto from "crypto";
+import { env } from "../config/env";
+
+const squadClient = axios.create({
+  baseURL: env.SQUAD_BASE_URL,
+  headers: {
+    Authorization: `Bearer ${env.SQUAD_SECRET_KEY}`,
+    "Content-Type": "application/json",
+  },
+});
+
+export interface SquadInitPayload {
+  email: string;
+  amount: number; // in NGN — will be converted to kobo
+  transactionRef: string;
+  customerName: string;
+  callbackUrl: string;
+}
+
+export interface SquadInitResult {
+  checkoutUrl: string;
+  transactionRef: string;
+}
+
+export const initializeTransaction = async (
+  payload: SquadInitPayload,
+): Promise<SquadInitResult> => {
+  const { data } = await squadClient.post("/transaction/initiate", {
+    email: payload.email,
+    amount: Math.round(payload.amount * 100), // kobo
+    currency: "NGN",
+    initiate_type: "inline",
+    transaction_ref: payload.transactionRef,
+    callback_url: payload.callbackUrl,
+    customer_name: payload.customerName,
+    pass_charge: false,
+  });
+
+  return {
+    checkoutUrl: data.data.checkout_url,
+    transactionRef: data.data.transaction_ref,
+  };
+};
+
+export const verifyTransaction = async (transactionRef: string) => {
+  const { data } = await squadClient.get(
+    `/transaction/verify/${transactionRef}`,
+  );
+  return data.data as {
+    transaction_status: string;
+    transaction_ref: string;
+    amount: number; // in kobo
+  };
+};
+
+export const verifyWebhookSignature = (
+  rawBody: string,
+  signatureHeader: string,
+): boolean => {
+  const hash = crypto
+    .createHmac("sha512", env.SQUAD_SECRET_KEY)
+    .update(rawBody)
+    .digest("hex")
+    .toUpperCase();
+  return hash === signatureHeader?.toUpperCase();
+};
