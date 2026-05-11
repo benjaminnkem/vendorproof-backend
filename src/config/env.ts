@@ -18,6 +18,8 @@ export const env = {
   SMS_GATE_USERNAME: process.env["SMS_GATE_USERNAME"]!,
   SMS_GATE_PASSWORD: process.env["SMS_GATE_PASSWORD"]!,
   SQUAD_SECRET_KEY: process.env["SQUAD_SECRET_KEY"]!,
-  SQUAD_BASE_URL: process.env["SQUAD_BASE_URL"] || "https://sandbox-api-d.squadco.com",
+  SQUAD_BASE_URL:
+    process.env["SQUAD_BASE_URL"] || "https://sandbox-api-d.squadco.com",
   APP_BASE_URL: process.env["APP_BASE_URL"]!,
+  CHECKOUT_REDIRECT_URL: process.env["CHECKOUT_REDIRECT_URL"]!,
 };

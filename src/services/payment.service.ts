@@ -153,6 +153,14 @@ export const updateService = async (
       ...(payload.bankDetailsId !== undefined
         ? { bankDetailsId: payload.bankDetailsId }
         : {}),
+      paymentLink: {
+        update: {
+          ...(payload.amount !== undefined ? { amount: payload.amount } : {}),
+          ...(payload.description !== undefined
+            ? { description: payload.description }
+            : {}),
+        },
+      },
     },
     select: {
       id: true,
@@ -216,6 +224,37 @@ export const createQuickLink = async (
   });
 
   return { ...link, url: `/pay/${link.token}` };
+};
+
+export const listQuickLinks = async (businessId: number) => {
+  const links = await prisma.paymentLink.findMany({
+    where: { businessId, type: "QUICK" },
+    select: {
+      id: true,
+      token: true,
+      amount: true,
+      description: true,
+      isOneTime: true,
+      isUsed: true,
+      expiresAt: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return links.map((l) => ({ ...l, url: `/pay/${l.token}` }));
+};
+
+export const deleteQuickLink = async (businessId: number, linkId: number) => {
+  const link = await prisma.paymentLink.findFirst({
+    where: { id: linkId, businessId, type: "QUICK" },
+  });
+
+  if (!link) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "Quick link not found");
+  }
+
+  await prisma.paymentLink.delete({ where: { id: linkId } });
 };
 
 /// Buyer facing
@@ -325,19 +364,43 @@ export const initiatePayment = async (
     select: { id: true, amount: true, isServiceRendered: true },
   });
 
-  const squadResult = await squadService.initializeTransaction({
-    email: payload.buyerEmail,
-    amount,
-    transactionRef: squadRef,
-    customerName: payload.buyerName,
-    callbackUrl: `${env.APP_BASE_URL}/pay/verify/${squadRef}`,
-  });
-
+  // Atomically claim one-time links before hitting Squad — prevents the race
+  // where two buyers simultaneously initiate payment on the same link
   if (link.isOneTime) {
-    await prisma.paymentLink.update({
-      where: { id: link.id },
+    const claimed = await prisma.paymentLink.updateMany({
+      where: { id: link.id, isUsed: false },
       data: { isUsed: true },
     });
+    if (claimed.count === 0) {
+      await prisma.payment.delete({ where: { squadRef } });
+      throw new CustomError(
+        HttpStatus.BAD_REQUEST,
+        "This payment link has already been used",
+      );
+    }
+  }
+
+  let squadResult: Awaited<
+    ReturnType<typeof squadService.initializeTransaction>
+  >;
+  try {
+    squadResult = await squadService.initializeTransaction({
+      email: payload.buyerEmail,
+      amount,
+      transactionRef: squadRef,
+      customerName: payload.buyerName,
+      callbackUrl: `${env.CHECKOUT_REDIRECT_URL}/payment/verify/${squadRef}`,
+    });
+  } catch (err) {
+    // Release the claim so the link can be retried
+    if (link.isOneTime) {
+      await prisma.paymentLink.update({
+        where: { id: link.id },
+        data: { isUsed: false },
+      });
+    }
+    await prisma.payment.delete({ where: { squadRef } });
+    throw err;
   }
 
   return {
@@ -385,16 +448,11 @@ export const verifyPayment = async (squadRef: string) => {
 
   if (squadTx.transaction_status === "success") {
     await confirmPayment(squadRef);
-    const updated = await prisma.payment.findUnique({
-      where: { squadRef },
-      select: { isServiceRendered: true, ratingToken: true, business: { select: { name: true, slug: true } } },
-    });
-
     return {
       status: "COMPLETED",
-      business: updated?.business,
-      ratingToken: updated?.isServiceRendered ? updated.ratingToken : undefined,
-      message: updated?.isServiceRendered
+      business: payment.business,
+      ratingToken: payment.isServiceRendered ? payment.ratingToken : undefined,
+      message: payment.isServiceRendered
         ? "Payment confirmed. You can rate this vendor now."
         : "Payment confirmed. You will receive a link to rate this vendor after the service is delivered.",
     };
@@ -427,7 +485,12 @@ export const handleSquadWebhook = async (
 
   const payment = await prisma.payment.findUnique({
     where: { squadRef: transaction_ref },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      paymentLinkId: true,
+      paymentLink: { select: { isOneTime: true } },
+    },
   });
 
   if (!payment || payment.status !== "PENDING") return;
@@ -439,6 +502,13 @@ export const handleSquadWebhook = async (
       where: { squadRef: transaction_ref },
       data: { status: "FAILED" },
     });
+    // Release the one-time link so it can be used again
+    if (payment.paymentLink.isOneTime) {
+      await prisma.paymentLink.update({
+        where: { id: payment.paymentLinkId },
+        data: { isUsed: false },
+      });
+    }
   }
 };
 
@@ -450,6 +520,7 @@ export const getRatingPage = async (ratingToken: string) => {
       buyerName: true,
       buyerEmail: true,
       amount: true,
+      status: true,
       isServiceRendered: true,
       ratingTokenExpiresAt: true,
       rating: { select: { rating: true } },
@@ -461,6 +532,13 @@ export const getRatingPage = async (ratingToken: string) => {
 
   if (!payment) {
     throw new CustomError(HttpStatus.NOT_FOUND, "Rating link not found");
+  }
+
+  if (payment.status !== "COMPLETED") {
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "Payment has not been completed",
+    );
   }
 
   if (payment.rating) {
@@ -497,6 +575,7 @@ export const submitRating = async (
     select: {
       id: true,
       businessId: true,
+      status: true,
       ratingTokenExpiresAt: true,
       rating: { select: { id: true } },
       business: { select: { trustScore: true } },
@@ -505,6 +584,13 @@ export const submitRating = async (
 
   if (!payment) {
     throw new CustomError(HttpStatus.NOT_FOUND, "Rating link not found");
+  }
+
+  if (payment.status !== "COMPLETED") {
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "Payment has not been completed",
+    );
   }
 
   if (payment.rating) {
@@ -535,10 +621,6 @@ export const submitRating = async (
         rating: payload.rating,
         comment: payload.comment ?? null,
       },
-    }),
-    prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: "COMPLETED" },
     }),
     prisma.trustEntry.create({
       data: {

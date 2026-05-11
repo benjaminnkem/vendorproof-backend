@@ -62,6 +62,20 @@ export const createQuickLink = asyncHandler(
   },
 );
 
+export const listQuickLinks = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const data = await paymentService.listQuickLinks(req.businessId!);
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, data });
+  },
+);
+
+export const deleteQuickLink = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    await paymentService.deleteQuickLink(req.businessId!, Number(req.params.id));
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, message: "Quick link deleted" });
+  },
+);
+
 // ── Buyer-facing ─────────────────────────────────────────────────────────────
 
 export const getPaymentPage = asyncHandler(
