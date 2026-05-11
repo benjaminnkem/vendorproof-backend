@@ -1,5 +1,8 @@
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import { randomUUID } from "crypto";
+
+export const generateToken = (): string => randomUUID().replace(/-/g, "");
 
 const SALT_ROUNDS = 10;
 

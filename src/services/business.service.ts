@@ -157,6 +157,7 @@ export const addBankDetails = async (
     data: {
       businessId,
       bankName: payload.bankName,
+      bankCode: "",
       accountNumber: payload.accountNumber,
       accountName: payload.accountName,
       isPrimary: payload.isPrimary ?? false,

@@ -9,6 +9,7 @@ tags:
   - name: Config
   - name: System
   - name: Triangle
+  - name: Pay
 paths:
   /api/auth/signup/step-1:
     post:
@@ -564,6 +565,427 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /api/business/me/payment-link:
+    get:
+      summary: Get generic payment link
+      description: Returns the business's persistent generic payment link, creating it if it does not exist yet.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Payment link retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetGenericPaymentLinkSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/payment-links/quick:
+    post:
+      summary: Create a quick one-time payment link
+      description: Generates a one-time payment link with an optional fixed amount, description, and expiry.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateQuickLinkRequest"
+      responses:
+        "201":
+          description: Quick link created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateQuickLinkSuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/services:
+    get:
+      summary: List services
+      description: Returns all services created by the authenticated business, ordered by most recent.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Services retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListServicesSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+    post:
+      summary: Create a service
+      description: Creates a new service with a dedicated payment link. Optionally links a bank account for payouts.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Service created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateServiceSuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Bank account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Bank account not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/services/{id}:
+    patch:
+      summary: Update a service
+      description: Updates an existing service by ID. All fields are optional.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceRequest"
+      responses:
+        "200":
+          description: Service updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateServiceSuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Service or bank account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Service not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+    delete:
+      summary: Delete a service
+      description: Permanently deletes a service by ID from the authenticated business.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Service deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteServiceSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Service not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Service not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/pay/rate/{ratingToken}:
+    get:
+      summary: Get rating page data
+      description: Returns payment and business details needed to render the buyer rating page. Fails if the link is expired or has already been rated.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: ratingToken
+          required: true
+          schema:
+            type: string
+            example: abc123xyz
+      responses:
+        "200":
+          description: Rating page data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetRatingPageSuccessResponse"
+        "400":
+          description: Rating already submitted or link expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: You have already submitted a rating
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Rating link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Rating link not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+    post:
+      summary: Submit a vendor rating
+      description: Submits a buyer rating (1–5) for a vendor. Updates the vendor's trust score and marks the payment as completed.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: ratingToken
+          required: true
+          schema:
+            type: string
+            example: abc123xyz
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitRatingRequest"
+      responses:
+        "200":
+          description: Rating submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitRatingSuccessResponse"
+        "400":
+          description: Rating already submitted or link expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: You have already submitted a rating
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Rating link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Rating link not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/pay/{token}:
+    get:
+      summary: Get payment page data
+      description: Returns the business profile and payment link details needed to render the buyer checkout page. Validates that the link is active and not expired.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            example: abc123xyz
+      responses:
+        "200":
+          description: Payment page data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPaymentPageSuccessResponse"
+        "400":
+          description: Payment link already used or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: This payment link has already been used
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Payment link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Payment link not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+    post:
+      summary: Initiate a payment
+      description: Records a payment against a payment link. If the service has already been rendered, a rating token is returned immediately; otherwise the buyer receives an email when the service is delivered.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            example: abc123xyz
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitiatePaymentRequest"
+      responses:
+        "201":
+          description: Payment recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InitiatePaymentSuccessResponse"
+        "400":
+          description: Link already used, expired, or amount missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: Amount is required for this payment link
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Payment link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Payment link not found
+                timestamp: "2026-05-10T12:00:00.000Z"
 
 components:
   securitySchemes:
@@ -1384,3 +1806,392 @@ components:
         message:
           type: string
           example: Bank details removed
+
+    GetGenericPaymentLinkSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+              example: abc123xyz
+            url:
+              type: string
+              example: /pay/abc123xyz
+
+    CreateQuickLinkRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Fixed amount for this link. Buyers cannot change it. Pass as a numeric string.
+          example: "5000"
+        description:
+          type: string
+          example: Logo design deposit
+        expiresInHours:
+          type: string
+          description: Number of hours until the link expires. Pass as a numeric string.
+          example: "48"
+
+    CreateQuickLinkSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 10
+            token:
+              type: string
+              example: abc123xyz
+            amount:
+              type: number
+              nullable: true
+              example: 5000
+            description:
+              type: string
+              nullable: true
+              example: Logo design deposit
+            expiresAt:
+              type: string
+              format: date-time
+              nullable: true
+              example: "2026-05-13T12:00:00.000Z"
+            url:
+              type: string
+              example: /pay/abc123xyz
+
+    ServiceItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Website Design
+        description:
+          type: string
+          nullable: true
+          example: Full business website build
+        amount:
+          type: number
+          nullable: true
+          example: 150000
+        bankDetailsId:
+          type: integer
+          nullable: true
+          example: 1
+        paymentUrl:
+          type: string
+          example: /pay/abc123xyz
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-01-15T09:00:00.000Z"
+
+    ListServicesSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceItem"
+
+    CreateServiceRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: Website Design
+        description:
+          type: string
+          example: Full business website build
+        amount:
+          type: string
+          description: Fixed price for this service. Pass as a numeric string.
+          example: "150000"
+        bankDetailsId:
+          type: string
+          description: ID of the bank account to receive payouts for this service. Pass as a numeric string.
+          example: "1"
+
+    CreateServiceSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          $ref: "#/components/schemas/ServiceItem"
+
+    UpdateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Website Design Pro
+        description:
+          type: string
+          example: Full business website build with SEO
+        amount:
+          type: string
+          description: Updated price. Pass as a numeric string.
+          example: "200000"
+        bankDetailsId:
+          type: string
+          description: Updated payout bank account ID. Pass as a numeric string.
+          example: "2"
+
+    UpdateServiceSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/ServiceItem"
+
+    DeleteServiceSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Service deleted
+
+    GetPaymentPageSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            business:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Ada Groceries Ltd
+                description:
+                  type: string
+                  nullable: true
+                  example: Retail grocery supplier for households and restaurants.
+                logo:
+                  type: string
+                  nullable: true
+                  example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+                slug:
+                  type: string
+                  example: ada-groceries-ltd
+                trustScore:
+                  type: number
+                  example: 72.5
+                kycStatus:
+                  type: string
+                  example: VERIFIED
+                tier:
+                  type: object
+                  nullable: true
+                  properties:
+                    name:
+                      type: string
+                      example: BRONZE
+                trustScoreHistories:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      score:
+                        type: number
+                        example: 68.0
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2026-04-01T10:00:00.000Z"
+            paymentLink:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - GENERIC
+                    - SERVICE
+                    - QUICK
+                  example: GENERIC
+                amount:
+                  type: number
+                  nullable: true
+                  example: 5000
+                description:
+                  type: string
+                  nullable: true
+                  example: Logo design deposit
+                isOneTime:
+                  type: boolean
+                  example: false
+
+    InitiatePaymentRequest:
+      type: object
+      required:
+        - buyerName
+        - buyerEmail
+      properties:
+        buyerName:
+          type: string
+          example: Emeka Obi
+        buyerEmail:
+          type: string
+          format: email
+          example: emeka@example.com
+        amount:
+          type: string
+          description: Required when the payment link has no fixed amount. Pass as a numeric string.
+          example: "5000"
+        isServiceRendered:
+          type: string
+          description: Pass "true" if the service has already been delivered. A rating token is returned immediately instead of waiting for an email.
+          enum:
+            - "true"
+            - "false"
+          example: "false"
+
+    InitiatePaymentSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 201
+        data:
+          type: object
+          properties:
+            paymentId:
+              type: integer
+              example: 42
+            amount:
+              type: number
+              example: 5000
+            isServiceRendered:
+              type: boolean
+              example: false
+            ratingToken:
+              type: string
+              nullable: true
+              description: Only present when isServiceRendered is true.
+              example: null
+            message:
+              type: string
+              example: Payment recorded. You will receive an email to rate this vendor after the service is delivered.
+
+    GetRatingPageSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            paymentId:
+              type: integer
+              example: 42
+            buyerName:
+              type: string
+              example: Emeka Obi
+            amount:
+              type: number
+              example: 5000
+            business:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Ada Groceries Ltd
+                logo:
+                  type: string
+                  nullable: true
+                  example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+                slug:
+                  type: string
+                  example: ada-groceries-ltd
+                trustScore:
+                  type: number
+                  example: 72.5
+
+    SubmitRatingRequest:
+      type: object
+      required:
+        - rating
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: Great service, very professional!
+
+    SubmitRatingSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Thank you for your feedback!
+            newTrustScore:
+              type: number
+              example: 75.5
