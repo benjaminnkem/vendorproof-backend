@@ -18,7 +18,9 @@ const RATING_SCORE_DELTA: Record<number, number> = {
   5: 3,
 };
 
-// ── Generic payment link ────────────────────────────────────────────────────
+/// Business facing
+
+// Normal payment link
 
 export const getOrCreateGenericPaymentLink = async (businessId: number) => {
   let link = await prisma.paymentLink.findFirst({
@@ -42,7 +44,7 @@ export const getOrCreateGenericPaymentLink = async (businessId: number) => {
   return { token: link.token, url: `/pay/${link.token}` };
 };
 
-// ── Services ────────────────────────────────────────────────────────────────
+// Payment link for Services
 
 export const createService = async (
   businessId: number,
@@ -142,9 +144,13 @@ export const updateService = async (
     where: { id: serviceId },
     data: {
       ...(payload.name ? { name: payload.name } : {}),
-      ...(payload.description !== undefined ? { description: payload.description } : {}),
+      ...(payload.description !== undefined
+        ? { description: payload.description }
+        : {}),
       ...(payload.amount !== undefined ? { amount: payload.amount } : {}),
-      ...(payload.bankDetailsId !== undefined ? { bankDetailsId: payload.bankDetailsId } : {}),
+      ...(payload.bankDetailsId !== undefined
+        ? { bankDetailsId: payload.bankDetailsId }
+        : {}),
     },
     select: {
       id: true,
@@ -158,7 +164,9 @@ export const updateService = async (
 
   return {
     ...updated,
-    paymentUrl: updated.paymentLink ? `/pay/${updated.paymentLink.token}` : null,
+    paymentUrl: updated.paymentLink
+      ? `/pay/${updated.paymentLink.token}`
+      : null,
     paymentLink: undefined,
   };
 };
@@ -175,7 +183,7 @@ export const deleteService = async (businessId: number, serviceId: number) => {
   await prisma.service.delete({ where: { id: serviceId } });
 };
 
-// ── Quick one-time links ─────────────────────────────────────────────────────
+// Quick onetime link
 
 export const createQuickLink = async (
   businessId: number,
@@ -208,7 +216,7 @@ export const createQuickLink = async (
   return { ...link, url: `/pay/${link.token}` };
 };
 
-// ── Buyer-facing ─────────────────────────────────────────────────────────────
+/// Buyer facing
 
 const resolvePaymentLink = async (token: string) => {
   const link = await prisma.paymentLink.findUnique({
@@ -231,11 +239,17 @@ const resolvePaymentLink = async (token: string) => {
   }
 
   if (link.isOneTime && link.isUsed) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "This payment link has already been used");
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "This payment link has already been used",
+    );
   }
 
   if (link.expiresAt && link.expiresAt < new Date()) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "This payment link has expired");
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "This payment link has expired",
+    );
   }
 
   return link;
@@ -355,11 +369,20 @@ export const getRatingPage = async (ratingToken: string) => {
   }
 
   if (payment.rating) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "You have already submitted a rating");
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "You have already submitted a rating",
+    );
   }
 
-  if (payment.ratingTokenExpiresAt && payment.ratingTokenExpiresAt < new Date()) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "This rating link has expired");
+  if (
+    payment.ratingTokenExpiresAt &&
+    payment.ratingTokenExpiresAt < new Date()
+  ) {
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "This rating link has expired",
+    );
   }
 
   return {
@@ -390,11 +413,20 @@ export const submitRating = async (
   }
 
   if (payment.rating) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "You have already submitted a rating");
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "You have already submitted a rating",
+    );
   }
 
-  if (payment.ratingTokenExpiresAt && payment.ratingTokenExpiresAt < new Date()) {
-    throw new CustomError(HttpStatus.BAD_REQUEST, "This rating link has expired");
+  if (
+    payment.ratingTokenExpiresAt &&
+    payment.ratingTokenExpiresAt < new Date()
+  ) {
+    throw new CustomError(
+      HttpStatus.BAD_REQUEST,
+      "This rating link has expired",
+    );
   }
 
   const delta = RATING_SCORE_DELTA[payload.rating] ?? 0;
