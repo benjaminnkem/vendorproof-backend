@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as businessController from "../controllers/business.controller";
+import * as paymentController from "../controllers/payment.controller";
 import { authenticate } from "../config/auth-middleware";
 import { bufferUploader } from "../utils";
 
@@ -23,5 +24,13 @@ businessRouter.delete("/me/socials/:id", authenticate, businessController.remove
 businessRouter.post("/me/bank-details", authenticate, businessController.addBankDetails);
 businessRouter.patch("/me/bank-details/:id", authenticate, businessController.updateBankDetails);
 businessRouter.delete("/me/bank-details/:id", authenticate, businessController.removeBankDetails);
+
+businessRouter.get("/me/payment-link", authenticate, paymentController.getGenericPaymentLink);
+businessRouter.post("/me/payment-links/quick", authenticate, paymentController.createQuickLink);
+
+businessRouter.get("/me/services", authenticate, paymentController.listServices);
+businessRouter.post("/me/services", authenticate, paymentController.createService);
+businessRouter.patch("/me/services/:id", authenticate, paymentController.updateService);
+businessRouter.delete("/me/services/:id", authenticate, paymentController.deleteService);
 
 export default businessRouter;

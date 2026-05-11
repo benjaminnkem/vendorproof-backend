@@ -94,6 +94,10 @@ model Business {
   bankDetails BankDetails[]
   tierId      Int?
 
+  services     Service[]
+  paymentLinks PaymentLink[]
+  payments     Payment[]
+
   @@index([ownerId], name: "idx_business_owner_id")
   @@index([name], name: "idx_business_name")
   @@map("businesses")
@@ -111,7 +115,8 @@ model BankDetails {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  services Service[]
 
   @@map("bank_details")
 }
@@ -228,4 +233,93 @@ enum TierNames {
   GOLD
   PLATINUM
   DIAMOND
+}
+
+model Service {
+  id            Int          @id @default(autoincrement())
+  businessId    Int
+  name          String
+  description   String?
+  amount        Float?
+  bankDetailsId Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bankDetails BankDetails? @relation(fields: [bankDetailsId], references: [id], onDelete: SetNull)
+  paymentLink PaymentLink?
+
+  @@map("services")
+}
+
+model PaymentLink {
+  id          Int             @id @default(autoincrement())
+  businessId  Int
+  token       String          @unique
+  type        PaymentLinkType @default(GENERIC)
+  amount      Float?
+  description String?
+  serviceId   Int?            @unique
+  isOneTime   Boolean         @default(false)
+  isUsed      Boolean         @default(false)
+  expiresAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service  Service?  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([token], name: "idx_payment_link_token")
+  @@map("payment_links")
+}
+
+model Payment {
+  id                   Int           @id @default(autoincrement())
+  paymentLinkId        Int
+  businessId           Int
+  buyerName            String
+  buyerEmail           String
+  amount               Float
+  isServiceRendered    Boolean       @default(false)
+  ratingToken          String?       @unique
+  ratingTokenExpiresAt DateTime?
+  status               PaymentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paymentLink PaymentLink    @relation(fields: [paymentLinkId], references: [id])
+  business    Business       @relation(fields: [businessId], references: [id])
+  rating      PaymentRating?
+
+  @@index([ratingToken], name: "idx_payment_rating_token")
+  @@map("payments")
+}
+
+model PaymentRating {
+  id        Int     @id @default(autoincrement())
+  paymentId Int     @unique
+  rating    Int
+  comment   String?
+
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_ratings")
+}
+
+enum PaymentLinkType {
+  GENERIC
+  SERVICE
+  QUICK
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
