@@ -1,4 +1,4 @@
-name: Deploy CCC Tool Backend on Windows VM
+name: Deploy Vendorproof to Azure VM
 
 on:
   push:
