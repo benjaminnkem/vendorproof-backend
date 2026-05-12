@@ -1,0 +1,104 @@
+name: Deploy CCC Tool Backend on Windows VM
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Deploy Branch Files, Set Environment, Generate .env, Build, and Start PM2
+        shell: powershell
+        run: |
+          Write-Host "==================="
+          Write-Host "Starting deployment"
+          Write-Host "GitHub Ref: ${{ github.ref }}"
+          Write-Host "==================="
+
+          # Branch detection
+          $APP_FOLDER = "C:\Users\Oyebode\Desktop\apps\TestApp"
+          $PM2_APP_NAME = "testapp"
+          $NODE_ENV = "development"
+          Write-Host "Branch: main (development)"
+
+          Write-Host "App folder: $APP_FOLDER"
+          Write-Host "PM2 app name: $PM2_APP_NAME"
+          Write-Host "Node environment: $NODE_ENV"
+
+          # Create folder if missing
+          if (!(Test-Path $APP_FOLDER)) { 
+              Write-Host "Creating folder $APP_FOLDER"
+              New-Item -ItemType Directory -Path $APP_FOLDER 
+          } else {
+              Write-Host "Folder already exists"
+          }
+
+          # Copy repo backend files and route to the folder
+          Write-Host "Copying files from backend to $APP_FOLDER..."
+          Copy-Item -Path * -Destination $APP_FOLDER -Recurse -Force
+          Write-Host "Files copied."
+          Set-Location $APP_FOLDER
+
+          # Generate .env safely
+          $envFile = Join-Path $APP_FOLDER ".env"
+          Write-Host "Generating .env at $envFile"
+          New-Item -Path $envFile -ItemType File -Force | Out-Null
+
+          # Secrets with multiline and special characters handled safely
+          $secrets = @{
+              NODE_ENV = "${{ secrets.NODE_ENV }}"
+              PORT = "${{ secrets.PORT }}"
+              DATABASE_URL = "${{ secrets.DATABASE_URL }}"
+              INTERSWITCH_BASE_URL = "${{ secrets.INTERSWITCH_BASE_URL }}"
+              INTERSWITCH_CLIENT_ID = "${{ secrets.INTERSWITCH_CLIENT_ID }}"
+              INTERSWITCH_CLIENT_SECRET = "${{ secrets.INTERSWITCH_CLIENT_SECRET }}"
+              CLOUDINARY_CLOUD_NAME = "${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+              CLOUDINARY_API_KEY = "${{ secrets.CLOUDINARY_API_KEY }}"
+              CLOUDINARY_API_SECRET = "${{ secrets.CLOUDINARY_API_SECRET }}"
+              SMS_GATE_USERNAME = "${{ secrets.SMS_GATE_USERNAME }}"
+              SMS_GATE_PASSWORD = "${{ secrets.SMS_GATE_PASSWORD }}"
+              JWT_SECRET = "${{ secrets.JWT_SECRET }}"
+              SQUAD_SECRET_KEY = "${{ secrets.SQUAD_SECRET_KEY }}"
+              SQUAD_BASE_URL = "${{ secrets.SQUAD_BASE_URL }}"
+              APP_BASE_URL = "${{ secrets.APP_BASE_URL }}"
+              CHECKOUT_REDIRECT_URL = "${{ secrets.CHECKOUT_REDIRECT_URL }}"
+          }
+
+          foreach ($key in $secrets.Keys) {
+              Add-Content $envFile "$key=""$($secrets[$key])"""
+          }
+          Write-Host ".env created successfully."
+
+          # Install dependencies and build
+          Write-Host "Installing dependencies..."
+          npm ci
+          Write-Host "Generating Prisma client..."
+          npx prisma generate
+          Write-Host "Building project..."
+          npm run build
+          Write-Host "Build complete."
+
+          # Stop old PM2 process only if exists
+          if (pm2 list | Select-String $PM2_APP_NAME) {
+              Write-Host "Stopping existing PM2 process: $PM2_APP_NAME"
+              pm2 restart $PM2_APP_NAME
+          } else {
+              Write-Host "No PM2 process named $PM2_APP_NAME found"
+              # Start PM2
+              Write-Host "Starting PM2 app..."
+              pm2 start dist/server.js --name $PM2_APP_NAME
+              pm2 save
+          }
+              
+          Write-Host "Deployment complete!"
