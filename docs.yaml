@@ -594,6 +594,31 @@ paths:
                 timestamp: "2026-05-10T12:00:00.000Z"
 
   /api/business/me/payment-links/quick:
+    get:
+      summary: List quick payment links
+      description: Returns all quick one-time payment links created by the authenticated business, ordered by most recent.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Quick links retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListQuickLinksSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
     post:
       summary: Create a quick one-time payment link
       description: Generates a one-time payment link with an optional fixed amount, description, and expiry.
@@ -630,6 +655,61 @@ paths:
                 status: error
                 statusCode: 401
                 message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/business/me/payment-links/quick/{id}:
+    delete:
+      summary: Delete a quick payment link
+      description: Permanently deletes a quick payment link owned by the authenticated business.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            example: 10
+      responses:
+        "200":
+          description: Quick link deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  statusCode:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Quick link deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Quick link not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Quick link not found
                 timestamp: "2026-05-10T12:00:00.000Z"
 
   /api/business/me/services:
@@ -805,6 +885,105 @@ paths:
                 status: error
                 statusCode: 404
                 message: Service not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/pay/verify/{squadRef}:
+    get:
+      summary: Verify a payment
+      description: Checks the status of a payment by its Squad transaction reference. If the payment is pending and Squad confirms it server-side, the status is updated to COMPLETED immediately. Returns a rating token when the service has already been rendered.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: squadRef
+          required: true
+          schema:
+            type: string
+            example: SQCHIZ12345678
+      responses:
+        "200":
+          description: Payment status returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyPaymentSuccessResponse"
+        "400":
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 400
+                message: Payment failed
+                timestamp: "2026-05-10T12:00:00.000Z"
+        "404":
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Payment not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/pay/webhook/squad:
+    post:
+      summary: Squad payment webhook
+      description: Receives payment event notifications from Squad. The request body is verified using the `x-squad-encrypted-body` HMAC signature header before processing. This endpoint is called by Squad — not by your frontend.
+      tags:
+        - Pay
+      parameters:
+        - in: header
+          name: x-squad-encrypted-body
+          required: true
+          schema:
+            type: string
+            example: "abc123hmacsha512hash"
+          description: HMAC-SHA512 signature of the raw request body, provided by Squad.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Event:
+                  type: string
+                  example: charge_completed
+                Body:
+                  type: object
+                  properties:
+                    transaction_ref:
+                      type: string
+                      example: SQCHIZ12345678
+                    transaction_status:
+                      type: string
+                      example: success
+      responses:
+        "200":
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        "401":
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Invalid webhook signature
                 timestamp: "2026-05-10T12:00:00.000Z"
 
   /api/pay/rate/{ratingToken}:
@@ -1825,6 +2004,88 @@ components:
             url:
               type: string
               example: /pay/abc123xyz
+
+    ListQuickLinksSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 10
+              token:
+                type: string
+                example: abc123xyz
+              amount:
+                type: number
+                nullable: true
+                example: 5000
+              description:
+                type: string
+                nullable: true
+                example: Logo design deposit
+              isOneTime:
+                type: boolean
+                example: true
+              isUsed:
+                type: boolean
+                example: false
+              expiresAt:
+                type: string
+                format: date-time
+                nullable: true
+                example: "2026-05-13T12:00:00.000Z"
+              createdAt:
+                type: string
+                format: date-time
+                example: "2026-05-11T10:00:00.000Z"
+              url:
+                type: string
+                example: /pay/abc123xyz
+
+    VerifyPaymentSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [COMPLETED, PENDING]
+              example: COMPLETED
+            message:
+              type: string
+              example: "Payment confirmed. You can rate this vendor now."
+            business:
+              type: object
+              nullable: true
+              properties:
+                name:
+                  type: string
+                  example: Acme Design Studio
+                slug:
+                  type: string
+                  example: acme-design-studio
+            ratingToken:
+              type: string
+              nullable: true
+              description: Present only when status is COMPLETED and the service has already been rendered.
+              example: rating_abc123xyz
 
     CreateQuickLinkRequest:
       type: object
