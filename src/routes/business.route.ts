@@ -26,7 +26,9 @@ businessRouter.patch("/me/bank-details/:id", authenticate, businessController.up
 businessRouter.delete("/me/bank-details/:id", authenticate, businessController.removeBankDetails);
 
 businessRouter.get("/me/payment-link", authenticate, paymentController.getGenericPaymentLink);
+businessRouter.get("/me/payment-links/quick", authenticate, paymentController.listQuickLinks);
 businessRouter.post("/me/payment-links/quick", authenticate, paymentController.createQuickLink);
+businessRouter.delete("/me/payment-links/quick/:id", authenticate, paymentController.deleteQuickLink);
 
 businessRouter.get("/me/services", authenticate, paymentController.listServices);
 businessRouter.post("/me/services", authenticate, paymentController.createService);

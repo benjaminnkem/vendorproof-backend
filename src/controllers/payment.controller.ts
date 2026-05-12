@@ -62,6 +62,20 @@ export const createQuickLink = asyncHandler(
   },
 );
 
+export const listQuickLinks = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const data = await paymentService.listQuickLinks(req.businessId!);
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, data });
+  },
+);
+
+export const deleteQuickLink = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    await paymentService.deleteQuickLink(req.businessId!, Number(req.params.id));
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, message: "Quick link deleted" });
+  },
+);
+
 // ── Buyer-facing ─────────────────────────────────────────────────────────────
 
 export const getPaymentPage = asyncHandler(
@@ -76,6 +90,21 @@ export const initiatePayment = asyncHandler(
     const payload = initiatePaymentSchema.parse(req.body);
     const data = await paymentService.initiatePayment(req.params["token"] as string, payload);
     res.status(HttpStatus.CREATED).json({ status: "success", statusCode: HttpStatus.CREATED, data });
+  },
+);
+
+export const verifyPayment = asyncHandler(
+  async (req: Request, res: Response) => {
+    const data = await paymentService.verifyPayment(req.params["squadRef"] as string);
+    res.status(HttpStatus.OK).json({ status: "success", statusCode: HttpStatus.OK, data });
+  },
+);
+
+export const squadWebhook = asyncHandler(
+  async (req: Request, res: Response) => {
+    const signature = req.headers["x-squad-encrypted-body"] as string;
+    await paymentService.handleSquadWebhook((req as any).rawBody, signature);
+    res.status(HttpStatus.OK).json({ status: "success" });
   },
 );
 

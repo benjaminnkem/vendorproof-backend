@@ -11,7 +11,11 @@ import router from "./routes";
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    (req as any).rawBody = buf.toString("utf8");
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use(

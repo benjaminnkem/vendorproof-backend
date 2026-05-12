@@ -287,11 +287,12 @@ model Payment {
   ratingToken          String?       @unique
   ratingTokenExpiresAt DateTime?
   status               PaymentStatus @default(PENDING)
+  squadRef             String?       @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  paymentLink PaymentLink    @relation(fields: [paymentLinkId], references: [id])
+  paymentLink PaymentLink    @relation(fields: [paymentLinkId], references: [id], onDelete: Cascade)
   business    Business       @relation(fields: [businessId], references: [id])
   rating      PaymentRating?
 
