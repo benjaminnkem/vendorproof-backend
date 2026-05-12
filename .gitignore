@@ -2,5 +2,6 @@ dist
 node_modules
 .env
 .env.prod
+.env.dev
 /src/generated/prisma
 logs
