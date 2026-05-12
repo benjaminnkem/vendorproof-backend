@@ -59,6 +59,7 @@ jobs:
           $secrets = @{
               NODE_ENV = "${{ secrets.NODE_ENV }}"
               PORT = "${{ secrets.PORT }}"
+              REDIS_CONNECTION_STRING = "${{ secrets.REDIS_CONNECTION_STRING }}"
               DATABASE_URL = "${{ secrets.DATABASE_URL }}"
               INTERSWITCH_BASE_URL = "${{ secrets.INTERSWITCH_BASE_URL }}"
               INTERSWITCH_CLIENT_ID = "${{ secrets.INTERSWITCH_CLIENT_ID }}"
