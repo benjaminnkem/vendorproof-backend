@@ -58,10 +58,7 @@ export const addSocial = asyncHandler(
 
 export const removeSocial = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    await businessService.removeSocial(
-      req.businessId!,
-      Number(req.params.id),
-    );
+    await businessService.removeSocial(req.businessId!, Number(req.params.id));
 
     res.status(HttpStatus.OK).json({
       status: "success",
@@ -112,6 +109,19 @@ export const removeBankDetails = asyncHandler(
       status: "success",
       statusCode: HttpStatus.OK,
       message: "Bank details removed",
+    });
+  },
+);
+
+export const getBusinesses = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const query = req.query;
+    const data = await businessService.getBusinesses(query);
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      data,
     });
   },
 );

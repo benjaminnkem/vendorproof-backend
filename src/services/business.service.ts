@@ -3,11 +3,13 @@ import { prisma } from "../config/db";
 import {
   AddBankDetailsInput,
   AddSocialInput,
+  GetBusinessesQueryInput,
   UpdateBankDetailsInput,
   UpdateBusinessInput,
 } from "../schemas/business.schema";
 import cloudinaryHttpService from "../infra/cloudinary/http-service";
 import { slugify } from "../utils";
+import { BusinessWhereInput } from "../generated/prisma/models";
 
 export const getPublicProfile = async (slug: string) => {
   const business = await prisma.business.findUnique({
@@ -64,12 +66,20 @@ export const updateBusiness = async (
 
   const [logoUpload, showcaseUploads] = await Promise.all([
     logoFile
-      ? cloudinaryHttpService.uploadFile({ file: logoFile, folder, resourceType: "image" })
+      ? cloudinaryHttpService.uploadFile({
+          file: logoFile,
+          folder,
+          resourceType: "image",
+        })
       : Promise.resolve(undefined),
     showcaseFiles?.length
       ? Promise.all(
           showcaseFiles.map((f) =>
-            cloudinaryHttpService.uploadFile({ file: f, folder, resourceType: "image" }),
+            cloudinaryHttpService.uploadFile({
+              file: f,
+              folder,
+              resourceType: "image",
+            }),
           ),
         )
       : Promise.resolve(undefined),
@@ -85,7 +95,9 @@ export const updateBusiness = async (
     data: {
       ...(payload.name ? { name: payload.name } : {}),
       ...(newSlug ? { slug: newSlug } : {}),
-      ...(payload.description !== undefined ? { description: payload.description } : {}),
+      ...(payload.description !== undefined
+        ? { description: payload.description }
+        : {}),
       ...(payload.email ? { email: payload.email } : {}),
       ...(payload.phoneNumber ? { phoneNumber: payload.phoneNumber } : {}),
       ...(payload.alternativePhoneNumber
@@ -93,7 +105,9 @@ export const updateBusiness = async (
         : {}),
       ...(payload.category ? { category: payload.category } : {}),
       ...(logoUpload ? { logo: logoUpload.url } : {}),
-      ...(showcaseUploads ? { showCaseImages: showcaseUploads.map((u) => u.url) } : {}),
+      ...(showcaseUploads
+        ? { showCaseImages: showcaseUploads.map((u) => u.url) }
+        : {}),
     },
     select: {
       id: true,
@@ -112,7 +126,10 @@ export const updateBusiness = async (
   });
 };
 
-export const addSocial = async (businessId: number, payload: AddSocialInput) => {
+export const addSocial = async (
+  businessId: number,
+  payload: AddSocialInput,
+) => {
   const existing = await prisma.social.findFirst({
     where: { businessId, platform: payload.platform as any },
   });
@@ -196,9 +213,13 @@ export const updateBankDetails = async (
     where: { id: bankId },
     data: {
       ...(payload.bankName ? { bankName: payload.bankName } : {}),
-      ...(payload.accountNumber ? { accountNumber: payload.accountNumber } : {}),
+      ...(payload.accountNumber
+        ? { accountNumber: payload.accountNumber }
+        : {}),
       ...(payload.accountName ? { accountName: payload.accountName } : {}),
-      ...(payload.isPrimary !== undefined ? { isPrimary: payload.isPrimary } : {}),
+      ...(payload.isPrimary !== undefined
+        ? { isPrimary: payload.isPrimary }
+        : {}),
     },
     select: {
       id: true,
@@ -210,10 +231,7 @@ export const updateBankDetails = async (
   });
 };
 
-export const removeBankDetails = async (
-  businessId: number,
-  bankId: number,
-) => {
+export const removeBankDetails = async (businessId: number, bankId: number) => {
   const bank = await prisma.bankDetails.findFirst({
     where: { id: bankId, businessId },
   });
@@ -223,4 +241,43 @@ export const removeBankDetails = async (
   }
 
   await prisma.bankDetails.delete({ where: { id: bankId } });
+};
+
+export const getBusinesses = async (query: GetBusinessesQueryInput) => {
+  const where: BusinessWhereInput = {};
+
+  if (query.search) {
+    where.OR = [
+      { name: { contains: query.search, mode: "insensitive" } },
+      { description: { contains: query.search, mode: "insensitive" } },
+      { category: { contains: query.search, mode: "insensitive" } },
+    ];
+  }
+
+  if (query.category) {
+    where.category = { equals: query.category, mode: "insensitive" };
+  }
+
+  const businesses = await prisma.business.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      logo: true,
+      category: true,
+      slug: true,
+      trustScore: true,
+      kycStatus: true,
+      tier: { select: { name: true } },
+      showCaseImages: true,
+    },
+  });
+
+  const formatted = businesses.map((b) => ({
+    ...b,
+    tier: b.tier ? b.tier.name : null,
+  }));
+
+  return formatted;
 };

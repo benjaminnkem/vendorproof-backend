@@ -283,6 +283,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/business:
+    get:
+      summary: List businesses
+      description: Returns businesses filtered by optional search text and category.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+          description: Search term matched against business name, description, and category.
+          example: groceries
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+          description: Business category filter.
+          example: Retail
+      responses:
+        "200":
+          description: Businesses retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetBusinessesSuccessResponse"
+
   /api/business/{slug}:
     get:
       summary: Get public business profile
@@ -1595,6 +1626,61 @@ components:
               example: +2348012345678
             business:
               $ref: "#/components/schemas/BusinessSummary"
+
+    GetBusinessesSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessListItem"
+
+    BusinessListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Ada Groceries Ltd
+        description:
+          type: string
+          nullable: true
+          example: Retail grocery supplier for households and restaurants.
+        logo:
+          type: string
+          nullable: true
+          example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+        category:
+          type: string
+          nullable: true
+          example: Retail
+        slug:
+          type: string
+          example: ada-groceries-ltd
+        trustScore:
+          type: number
+          example: 72.5
+        kycStatus:
+          type: string
+          example: PENDING
+        tier:
+          type: string
+          nullable: true
+          example: BRONZE
+        showCaseImages:
+          type: array
+          items:
+            type: string
+          example:
+            - https://res.cloudinary.com/demo/image/upload/img1.jpg
 
     BusinessSummary:
       type: object

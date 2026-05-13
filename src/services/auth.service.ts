@@ -26,6 +26,7 @@ import {
 import { smsQueue } from "../queues/sms/sms.queue";
 import { sign } from "jsonwebtoken";
 import { env } from "../config/env";
+import { getOrCreateGenericPaymentLink } from "./payment.service";
 
 const step1Action = async (phoneNumber: string) => {
   const userAuth = await prisma.userAuth.findFirst({
@@ -333,6 +334,8 @@ export const signUpStep4 = async (
       },
     });
   }
+
+  await getOrCreateGenericPaymentLink(createdBusiness.id);
 
   const accessToken = sign(
     {
