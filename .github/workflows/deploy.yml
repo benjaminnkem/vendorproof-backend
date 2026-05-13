@@ -82,6 +82,7 @@ jobs:
           Write-Host ".env created successfully."
 
           # Install dependencies and build
+          pm2 stop $PM2_APP_NAME
           Write-Host "Installing dependencies..."
           npm ci
           Write-Host "Generating Prisma client..."
