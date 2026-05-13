@@ -560,36 +560,38 @@ export const testDelete = async (phoneNumber: string) => {
 };
 
 export async function getUser(userId: number) {
-  let user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phoneNumber: true,
-      createdAt: true,
-      business: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          logo: true,
-          kycStatus: true,
-          showCaseImages: true,
-          socials: true,
-          category: true,
-          trustScore: true,
-          description: true,
-          createdAt: true,
-          bankDetails: true,
-          tier: true,
-          paymentLink: true,
-          qrCodeUrl: true,
+  const getUserData = async () =>
+    await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        createdAt: true,
+        business: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+            kycStatus: true,
+            showCaseImages: true,
+            socials: true,
+            category: true,
+            trustScore: true,
+            description: true,
+            createdAt: true,
+            bankDetails: true,
+            tier: true,
+            paymentLink: true,
+            qrCodeUrl: true,
+          },
         },
       },
-    },
-  });
+    });
+  let user = await getUserData();
 
   if (!user) {
     throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
@@ -598,7 +600,7 @@ export async function getUser(userId: number) {
   if (!user.business?.paymentLink || !user.business?.qrCodeUrl) {
     await getOrCreateGenericPaymentLink(user.business!.id);
 
-    return await getUser(userId);
+    user = await getUserData();
   }
 
   return {
