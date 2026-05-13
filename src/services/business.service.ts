@@ -37,6 +37,7 @@ export const getPublicProfile = async (slug: string) => {
         take: 10,
         select: { score: true, createdAt: true },
       },
+      services: { select: { id: true, name: true, description: true } },
     },
   });
 
@@ -44,7 +45,14 @@ export const getPublicProfile = async (slug: string) => {
     throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
   }
 
-  return business;
+  const extras = await getBusinessExtras(business.id);
+
+  const formattedBusiness = {
+    ...business,
+    ...extras,
+  };
+
+  return formattedBusiness;
 };
 
 export const updateBusiness = async (
@@ -281,3 +289,101 @@ export const getBusinesses = async (query: GetBusinessesQueryInput) => {
 
   return formatted;
 };
+
+async function calculateTrustGrowth(businessId: number) {
+  const histories = await prisma.trustScoreHistory.findMany({
+    where: { businessId },
+    orderBy: { createdAt: "desc" },
+    take: 2,
+  });
+
+  if (histories.length < 2) {
+    return "No change in last 30 days";
+  }
+
+  const [latest, previous] = histories;
+  const change = (latest?.score ?? 0) - (previous?.score ?? 0);
+
+  if (change === 0) {
+    return "No change in last 30 days";
+  }
+
+  const percentageChange = previous?.score
+    ? (change / previous.score) * 100
+    : 100;
+
+  const roundedChange = Math.abs(percentageChange).toFixed(1);
+  const direction = change > 0 ? "+" : "-";
+
+  return `${direction}${roundedChange}% in last 30 days`;
+}
+
+export async function getBusinessExtras(businessId: number) {
+  const ratings = await prisma.paymentRating.aggregate({
+    where: { payment: { businessId: businessId } },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+
+  const ratingsSummary = ratings._avg.rating
+    ? parseFloat(ratings._avg.rating.toFixed(2))
+    : null;
+
+  const ratingsCount = ratings._count.rating;
+
+  const reviews = await prisma.paymentRating.findMany({
+    where: { payment: { businessId: businessId }, comment: { not: null } },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      payment: {
+        select: {
+          buyerName: true,
+          buyerEmail: true,
+        },
+      },
+    },
+  });
+
+  const formattedReviews = reviews.map((r) => ({
+    reviewerName: r.payment.buyerName,
+    rating: r.rating,
+    comment: r.comment,
+    createdAt: r.createdAt,
+  }));
+
+  const totalAmountTransacted = await prisma.payment
+    .aggregate({
+      where: { businessId: businessId, status: "COMPLETED" },
+      _sum: { amount: true },
+    })
+    .then((result) => result._sum.amount || 0);
+
+  const successfulTransactionsCount = await prisma.payment.count({
+    where: { businessId: businessId, status: "COMPLETED" },
+  });
+
+  const totalVerifiedBuyers = await prisma.payment
+    .findMany({
+      where: { businessId: businessId, status: "COMPLETED" },
+      select: { buyerEmail: true },
+      distinct: ["buyerEmail"],
+    })
+    .then((buyers) => buyers.length);
+
+  const trustGrowth = await calculateTrustGrowth(businessId);
+
+  return {
+    ratingsSummary,
+    ratingsCount,
+    reviews: formattedReviews,
+    totalAmountTransacted,
+    successfulTransactionsCount,
+    totalVerifiedBuyers,
+    trustGrowth,
+  };
+}

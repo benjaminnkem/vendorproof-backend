@@ -1847,6 +1847,59 @@ components:
                     type: string
                     format: date-time
                     example: "2026-04-01T10:00:00.000Z"
+            services:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 12
+                  name:
+                    type: string
+                    example: Website Design
+                  description:
+                    type: string
+                    nullable: true
+                    example: Full business website build
+            ratingsSummary:
+              type: number
+              nullable: true
+              example: 4.6
+            ratingsCount:
+              type: integer
+              example: 27
+            reviews:
+              type: array
+              items:
+                type: object
+                properties:
+                  reviewerName:
+                    type: string
+                    example: Jane Doe
+                  rating:
+                    type: integer
+                    example: 5
+                  comment:
+                    type: string
+                    nullable: true
+                    example: Great service and fast delivery.
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2026-05-10T09:00:00.000Z"
+            totalAmountTransacted:
+              type: number
+              example: 2500000
+            successfulTransactionsCount:
+              type: integer
+              example: 183
+            totalVerifiedBuyers:
+              type: integer
+              example: 141
+            trustGrowth:
+              type: string
+              example: +8.3% in last 30 days
 
     UpdateBusinessRequest:
       type: object
@@ -2374,6 +2427,28 @@ components:
                 kycStatus:
                   type: string
                   example: VERIFIED
+                phoneNumber:
+                  type: string
+                  nullable: true
+                  example: +2348012345678
+                alternativePhoneNumber:
+                  type: string
+                  nullable: true
+                  example: +2348098765432
+                category:
+                  type: string
+                  nullable: true
+                  example: Retail
+                showCaseImages:
+                  type: array
+                  items:
+                    type: string
+                  example:
+                    - https://res.cloudinary.com/demo/image/upload/img1.jpg
+                socials:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Social"
                 tier:
                   type: object
                   nullable: true
@@ -2381,6 +2456,16 @@ components:
                     name:
                       type: string
                       example: BRONZE
+                owner:
+                  type: object
+                  nullable: true
+                  properties:
+                    firstName:
+                      type: string
+                      example: Ada
+                    lastName:
+                      type: string
+                      example: Okafor
                 trustScoreHistories:
                   type: array
                   items:
@@ -2393,6 +2478,44 @@ components:
                         type: string
                         format: date-time
                         example: "2026-04-01T10:00:00.000Z"
+                ratingsSummary:
+                  type: number
+                  nullable: true
+                  example: 4.6
+                ratingsCount:
+                  type: integer
+                  example: 27
+                reviews:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      reviewerName:
+                        type: string
+                        example: Jane Doe
+                      rating:
+                        type: integer
+                        example: 5
+                      comment:
+                        type: string
+                        nullable: true
+                        example: Great service and fast delivery.
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: "2026-05-10T09:00:00.000Z"
+                totalAmountTransacted:
+                  type: number
+                  example: 2500000
+                successfulTransactionsCount:
+                  type: integer
+                  example: 183
+                totalVerifiedBuyers:
+                  type: integer
+                  example: 141
+                trustGrowth:
+                  type: string
+                  example: +8.3% in last 30 days
             paymentLink:
               type: object
               properties:

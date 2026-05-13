@@ -37,7 +37,7 @@ export const authenticate = async (
       id: true,
       user: {
         select: {
-          business: { select: { id: true }, take: 1 },
+          business: { select: { id: true } },
         },
       },
     },

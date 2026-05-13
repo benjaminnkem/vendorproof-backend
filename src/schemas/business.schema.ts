@@ -1,11 +1,11 @@
-import { array, enum as enum_, object, string } from "zod";
+import { any, array, email, enum as enum_, object, string } from "zod";
 import { SocialPlatform } from "../generated/prisma/enums";
 import { formatPhoneNumber } from "../utils";
 
 export const updateBusinessSchema = object({
   name: string().min(1).optional(),
   description: string().optional(),
-  email: string().email().optional(),
+  email: email().optional(),
   phoneNumber: string()
     .optional()
     .transform((val) => (val ? formatPhoneNumber(val) : val)),
@@ -13,6 +13,8 @@ export const updateBusinessSchema = object({
     .optional()
     .transform((val) => (val ? formatPhoneNumber(val) : val)),
   category: string().optional(),
+  businessLogo: any().optional(),
+  businessShowCaseImages: array(any()).optional(),
 });
 
 export type UpdateBusinessInput = ReturnType<typeof updateBusinessSchema.parse>;

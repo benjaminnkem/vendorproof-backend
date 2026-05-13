@@ -11,6 +11,7 @@ import {
   InitiatePaymentInput,
   SubmitRatingInput,
 } from "../schemas/payment.schema";
+import { getBusinessExtras } from "./business.service";
 
 const RATING_SCORE_DELTA: Record<number, number> = {
   1: -3,
@@ -308,7 +309,13 @@ export const getPaymentPage = async (token: string) => {
       slug: true,
       trustScore: true,
       kycStatus: true,
+      socials: true,
+      phoneNumber: true,
+      alternativePhoneNumber: true,
+      category: true,
+      showCaseImages: true,
       tier: { select: { name: true } },
+      owner: { select: { firstName: true, lastName: true } },
       trustScoreHistories: {
         orderBy: { createdAt: "desc" },
         take: 6,
@@ -317,8 +324,13 @@ export const getPaymentPage = async (token: string) => {
     },
   });
 
+  const extras = await getBusinessExtras(link.businessId);
+
   return {
-    business,
+    business: {
+      ...business,
+      ...extras,
+    },
     paymentLink: {
       type: link.type,
       amount: link.amount,
