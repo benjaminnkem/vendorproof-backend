@@ -1,5 +1,5 @@
 import app from "./app";
-import { closeDbConnection } from "./config/db";
+import { closeDbConnection, prisma } from "./config/db";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { closeCacheConnection } from "./config/redis";

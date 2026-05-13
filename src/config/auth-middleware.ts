@@ -26,7 +26,9 @@ export const authenticate = async (
   try {
     decoded = verify(token, env.JWT_SECRET) as JwtPayload;
   } catch {
-    return next(new CustomError(HttpStatus.UNAUTHORIZED, "Invalid or expired token"));
+    return next(
+      new CustomError(HttpStatus.UNAUTHORIZED, "Invalid or expired token"),
+    );
   }
 
   const userAuth = await prisma.userAuth.findUnique({
@@ -35,7 +37,7 @@ export const authenticate = async (
       id: true,
       user: {
         select: {
-          businesses: { select: { id: true }, take: 1 },
+          business: { select: { id: true }, take: 1 },
         },
       },
     },
@@ -46,7 +48,7 @@ export const authenticate = async (
   }
 
   req.userAuthId = userAuth.id;
-  req.businessId = userAuth.user.businesses[0]?.id ?? undefined;
+  req.businessId = userAuth.user.business?.id ?? undefined;
 
   next();
 };

@@ -565,7 +565,7 @@ export const getUser = async (userId: number) => {
       lastName: true,
       email: true,
       phoneNumber: true,
-      businesses: {
+      business: {
         select: {
           id: true,
           name: true,
@@ -587,8 +587,6 @@ export const getUser = async (userId: number) => {
 
   const data = {
     ...user,
-    businesses: undefined,
-    business: user.businesses.length > 0 ? user.businesses[0] : null,
   };
 
   return {

@@ -1593,10 +1593,8 @@ components:
             phoneNumber:
               type: string
               example: +2348012345678
-            businesses:
-              type: array
-              items:
-                $ref: "#/components/schemas/BusinessSummary"
+            business:
+              $ref: "#/components/schemas/BusinessSummary"
 
     BusinessSummary:
       type: object

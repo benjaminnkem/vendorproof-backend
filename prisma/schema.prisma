@@ -20,13 +20,15 @@ model User {
   lastName    String
   phoneNumber String  @unique
 
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  businesses Business[]
-  userAuth   UserAuth?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business Business?
+  userAuth UserAuth?
 
   kycIdDocumentUrl String?
   kycSelfieUrl     String?
+  businessId       Int?    @unique
 
   @@index([email], name: "idx_user_email")
   @@map("users")
@@ -62,7 +64,7 @@ model UserAuth {
 
 model Business {
   id                        Int      @id @default(autoincrement())
-  ownerId                   Int?
+  ownerId                   Int      @unique
   name                      String
   description               String?
   logo                      String?
@@ -87,7 +89,7 @@ model Business {
   trustScoreHistories TrustScoreHistory[]
   trustEntries        TrustEntry[]
   socials             Social[]
-  owner               User?               @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  owner               User                @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   tier                Tier?               @relation("TierBusinesses", fields: [tierId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   kycStatus   KycStatus     @default(PENDING)
@@ -236,7 +238,7 @@ enum TierNames {
 }
 
 model Service {
-  id            Int          @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   businessId    Int
   name          String
   description   String?
