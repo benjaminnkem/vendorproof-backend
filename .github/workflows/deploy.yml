@@ -74,6 +74,7 @@ jobs:
               SQUAD_BASE_URL = "${{ secrets.SQUAD_BASE_URL }}"
               APP_BASE_URL = "${{ secrets.APP_BASE_URL }}"
               CHECKOUT_REDIRECT_URL = "${{ secrets.CHECKOUT_REDIRECT_URL }}"
+              FRONTEND_URL = "${{ secrets.FRONTEND_URL }}"
           }
 
           foreach ($key in $secrets.Keys) {
