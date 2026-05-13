@@ -1,4 +1,4 @@
-import { any, array, email, enum as enum_, object, string } from "zod";
+import { any, array, boolean, email, enum as enum_, object, string } from "zod";
 import { SocialPlatform } from "../generated/prisma/enums";
 import { formatPhoneNumber } from "../utils";
 
@@ -30,9 +30,7 @@ export const addBankDetailsSchema = object({
   bankName: string().min(1, "Bank name is required"),
   accountNumber: string().min(10, "Account number must be at least 10 digits"),
   accountName: string().min(1, "Account name is required"),
-  isPrimary: string()
-    .optional()
-    .transform((val) => val === "true"),
+  isPrimary: boolean().optional(),
 });
 
 export type AddBankDetailsInput = ReturnType<typeof addBankDetailsSchema.parse>;
@@ -41,9 +39,7 @@ export const updateBankDetailsSchema = object({
   bankName: string().min(1).optional(),
   accountNumber: string().min(10).optional(),
   accountName: string().min(1).optional(),
-  isPrimary: string()
-    .optional()
-    .transform((val) => (val === undefined ? undefined : val === "true")),
+  isPrimary: boolean().optional(),
 });
 
 export type UpdateBankDetailsInput = ReturnType<

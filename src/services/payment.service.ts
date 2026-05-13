@@ -432,6 +432,9 @@ export const verifyPayment = async (squadRef: string) => {
       amount: true,
       isServiceRendered: true,
       ratingToken: true,
+      buyerName: true,
+      buyerEmail: true,
+      squadRef: true,
       business: {
         select: {
           name: true,
@@ -457,6 +460,9 @@ export const verifyPayment = async (squadRef: string) => {
       message: payment.isServiceRendered
         ? "Payment confirmed. You can rate this vendor now."
         : "Payment confirmed. You will receive a link to rate this vendor after the service is delivered.",
+      buyerName: payment.buyerName,
+      buyerEmail: payment.buyerEmail,
+      transactionReference: payment.squadRef,
     };
   }
 
@@ -477,6 +483,9 @@ export const verifyPayment = async (squadRef: string) => {
         ? "Payment confirmed. You can rate this vendor now."
         : "Payment confirmed. You will receive a link to rate this vendor after the service is delivered.",
       amount: payment.amount,
+      buyerName: payment.buyerName,
+      buyerEmail: payment.buyerEmail,
+      transactionReference: payment.squadRef,
     };
   }
 
