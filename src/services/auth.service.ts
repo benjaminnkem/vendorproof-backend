@@ -582,6 +582,7 @@ export const getUser = async (userId: number) => {
           trustScore: true,
           description: true,
           createdAt: true,
+          bankDetails: true,
         },
       },
     },

@@ -2245,11 +2245,30 @@ components:
                 slug:
                   type: string
                   example: acme-design-studio
+                logo:
+                  type: string
+                  nullable: true
+                  example: https://res.cloudinary.com/demo/image/upload/logo.jpg
+                tier:
+                  type: object
+                  nullable: true
+                  properties:
+                    name:
+                      type: string
+                      example: BRONZE
+                trustScore:
+                  type: number
+                  example: 72.5
             ratingToken:
               type: string
               nullable: true
               description: Present only when status is COMPLETED and the service has already been rendered.
               example: rating_abc123xyz
+            amount:
+              type: number
+              nullable: true
+              description: Present when payment is completed.
+              example: 5000
 
     CreateQuickLinkRequest:
       type: object

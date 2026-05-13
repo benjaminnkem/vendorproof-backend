@@ -5,7 +5,7 @@ import { env } from "../config/env";
 const squadClient = axios.create({
   baseURL: env.SQUAD_BASE_URL,
   headers: {
-    Authorization: `Bearer ${env.SQUAD_SECRET_KEY}`,
+    Authorization: `${env.SQUAD_SECRET_KEY}`,
     "Content-Type": "application/json",
   },
 });
@@ -26,7 +26,7 @@ export interface SquadInitResult {
 export const initializeTransaction = async (
   payload: SquadInitPayload,
 ): Promise<SquadInitResult> => {
-  const { data } = await squadClient.post("/transaction/initiate", {
+  const { data } = await squadClient.post("/payment/initiate", {
     email: payload.email,
     amount: Math.round(payload.amount * 100), // kobo
     currency: "NGN",
