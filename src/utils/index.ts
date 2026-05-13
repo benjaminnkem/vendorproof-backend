@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { randomUUID } from "crypto";
+import qrcode from "qrcode";
+import cloudinaryHttpService from "../infra/cloudinary/http-service";
 
 export const generateToken = (): string => randomUUID().replace(/-/g, "");
 
@@ -85,4 +87,19 @@ export const generateOtp = (length: number = 6): string => {
     otp += digits[Math.floor(Math.random() * digits.length)];
   }
   return otp;
+};
+
+export const createAndUploadQrCode = async (link: string): Promise<string> => {
+  const dataUrl = await qrcode.toBuffer(link, { type: "png" });
+
+  const { url } = await cloudinaryHttpService.uploadFile({
+    file: {
+      buffer: dataUrl,
+      mimetype: "image/png",
+      originalname: `qr-code-${Date.now()}.png`,
+    },
+    folder: "vendorproof/qr-codes",
+  });
+
+  return url;
 };

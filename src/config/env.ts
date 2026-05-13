@@ -22,4 +22,5 @@ export const env = {
     process.env["SQUAD_BASE_URL"] || "https://sandbox-api-d.squadco.com",
   APP_BASE_URL: process.env["APP_BASE_URL"]!,
   CHECKOUT_REDIRECT_URL: process.env["CHECKOUT_REDIRECT_URL"]!,
+  FRONTEND_URL: process.env["FRONTEND_URL"]!,
 };

@@ -2,7 +2,7 @@ import { addHours, addDays } from "date-fns";
 import { CustomError, HttpStatus } from "../@types";
 import { prisma } from "../config/db";
 import { env } from "../config/env";
-import { generateToken } from "../utils";
+import { createAndUploadQrCode, generateToken } from "../utils";
 import * as squadService from "./squad.service";
 import {
   CreateServiceInput,
@@ -21,9 +21,9 @@ const RATING_SCORE_DELTA: Record<number, number> = {
   5: 3,
 };
 
-/// Business facing
-
-// Normal payment link
+const resolveLinkWithBaseUrl = (link: string) => {
+  return `${env.FRONTEND_URL}${link}`;
+};
 
 export const getOrCreateGenericPaymentLink = async (businessId: number) => {
   let link = await prisma.paymentLink.findFirst({
@@ -33,6 +33,9 @@ export const getOrCreateGenericPaymentLink = async (businessId: number) => {
 
   if (!link) {
     const token = generateToken();
+    const url = resolveLinkWithBaseUrl(`/pay/${token}`);
+    const qrCode = await createAndUploadQrCode(url);
+
     link = await prisma.paymentLink.create({
       data: { businessId, token, type: "GENERIC" },
       select: { id: true, token: true },
@@ -40,11 +43,14 @@ export const getOrCreateGenericPaymentLink = async (businessId: number) => {
 
     await prisma.business.update({
       where: { id: businessId },
-      data: { paymentLink: `/pay/${token}` },
+      data: { paymentLink: url, qrCodeUrl: qrCode },
     });
   }
 
-  return { token: link.token, url: `/pay/${link.token}` };
+  return {
+    token: link.token,
+    url: resolveLinkWithBaseUrl(`/pay/${link.token}`),
+  };
 };
 
 // Payment link for Services
@@ -94,7 +100,9 @@ export const createService = async (
 
   return {
     ...service,
-    paymentUrl: `/pay/${service.paymentLink?.token}`,
+    paymentUrl: service.paymentLink
+      ? resolveLinkWithBaseUrl(`/pay/${service.paymentLink.token}`)
+      : null,
     paymentLink: undefined,
   };
 };
@@ -116,7 +124,9 @@ export const listServices = async (businessId: number) => {
 
   return services.map((s) => ({
     ...s,
-    paymentUrl: s.paymentLink ? `/pay/${s.paymentLink.token}` : null,
+    paymentUrl: s.paymentLink
+      ? resolveLinkWithBaseUrl(`/pay/${s.paymentLink.token}`)
+      : null,
     paymentLink: undefined,
   }));
 };
@@ -176,7 +186,7 @@ export const updateService = async (
   return {
     ...updated,
     paymentUrl: updated.paymentLink
-      ? `/pay/${updated.paymentLink.token}`
+      ? resolveLinkWithBaseUrl(`/pay/${updated.paymentLink.token}`)
       : null,
     paymentLink: undefined,
   };
@@ -224,7 +234,7 @@ export const createQuickLink = async (
     },
   });
 
-  return { ...link, url: `/pay/${link.token}` };
+  return { ...link, url: resolveLinkWithBaseUrl(`/pay/${link.token}`) };
 };
 
 export const listQuickLinks = async (businessId: number) => {
@@ -243,7 +253,10 @@ export const listQuickLinks = async (businessId: number) => {
     orderBy: { createdAt: "desc" },
   });
 
-  return links.map((l) => ({ ...l, url: `/pay/${l.token}` }));
+  return links.map((l) => ({
+    ...l,
+    url: resolveLinkWithBaseUrl(`/pay/${l.token}`),
+  }));
 };
 
 export const deleteQuickLink = async (businessId: number, linkId: number) => {

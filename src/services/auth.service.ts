@@ -559,8 +559,8 @@ export const testDelete = async (phoneNumber: string) => {
   };
 };
 
-export const getUser = async (userId: number) => {
-  const user = await prisma.user.findUnique({
+export async function getUser(userId: number) {
+  let user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -583,6 +583,9 @@ export const getUser = async (userId: number) => {
           description: true,
           createdAt: true,
           bankDetails: true,
+          tier: true,
+          paymentLink: true,
+          qrCodeUrl: true,
         },
       },
     },
@@ -592,9 +595,11 @@ export const getUser = async (userId: number) => {
     throw new CustomError(HttpStatus.NOT_FOUND, "User not found");
   }
 
-  const data = {
-    ...user,
-  };
+  if (!user.business?.paymentLink || !user.business?.qrCodeUrl) {
+    await getOrCreateGenericPaymentLink(user.business!.id);
+
+    return await getUser(userId);
+  }
 
   return {
     status: "success",
@@ -602,4 +607,4 @@ export const getUser = async (userId: number) => {
     message: "User retrieved successfully",
     data: user,
   };
-};
+}
