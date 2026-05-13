@@ -85,4 +85,10 @@ businessRouter.delete(
   paymentController.deleteService,
 );
 
+businessRouter.get(
+  "/me/transactions",
+  authenticate,
+  paymentController.getBusinessTransactionHistory,
+);
+
 export default businessRouter;

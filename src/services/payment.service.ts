@@ -655,3 +655,23 @@ export const submitRating = async (
 
   return { message: "Thank you for your feedback!", newTrustScore: scoreAfter };
 };
+
+export const getBusinessTransactionHistory = async (businessId: number) => {
+  const transactions = await prisma.payment.findMany({
+    where: { businessId },
+    select: {
+      id: true,
+      amount: true,
+      status: true,
+      createdAt: true,
+      buyerName: true,
+      buyerEmail: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return {
+    message: "Transaction history retrieved successfully",
+    data: transactions,
+  };
+};

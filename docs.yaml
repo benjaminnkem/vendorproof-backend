@@ -918,6 +918,33 @@ paths:
                 message: Service not found
                 timestamp: "2026-05-10T12:00:00.000Z"
 
+  /api/business/me/transactions:
+    get:
+      summary: Get business transaction history
+      description: Returns payment transactions for the authenticated business ordered by latest first.
+      tags:
+        - Business
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Transaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetBusinessTransactionHistorySuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
   /api/pay/verify/{squadRef}:
     get:
       summary: Verify a payment
@@ -2391,6 +2418,50 @@ components:
         message:
           type: string
           example: Service deleted
+
+    TransactionHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 42
+        amount:
+          type: number
+          example: 5000
+        status:
+          type: string
+          example: COMPLETED
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-13T14:22:10.000Z"
+        buyerName:
+          type: string
+          example: Emeka Obi
+        buyerEmail:
+          type: string
+          format: email
+          example: emeka@example.com
+
+    GetBusinessTransactionHistorySuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Transaction history retrieved successfully
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/TransactionHistoryItem"
 
     GetPaymentPageSuccessResponse:
       type: object

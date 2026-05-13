@@ -568,6 +568,7 @@ export const getUser = async (userId: number) => {
       lastName: true,
       email: true,
       phoneNumber: true,
+      createdAt: true,
       business: {
         select: {
           id: true,
@@ -579,6 +580,8 @@ export const getUser = async (userId: number) => {
           socials: true,
           category: true,
           trustScore: true,
+          description: true,
+          createdAt: true,
         },
       },
     },
