@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { HttpStatus, UploadFileMap } from "../@types";
+import { CustomError, HttpStatus, UploadFileMap } from "../@types";
 import asyncHandler from "../config/async-handler";
 import { AuthRequest } from "../config/auth-middleware";
 import {
@@ -25,11 +25,15 @@ export const getPublicProfile = asyncHandler(
 
 export const updateBusiness = asyncHandler(
   async (req: AuthRequest, res: Response) => {
+    if (!req.businessId) {
+      throw new CustomError(HttpStatus.FORBIDDEN, "No business associated with this account");
+    }
+
     const files = (req.files ?? {}) as UploadFileMap;
     const payload = updateBusinessSchema.parse(req.body);
 
     const data = await businessService.updateBusiness(
-      req.businessId!,
+      req.businessId,
       payload,
       files.businessLogo?.[0],
       files.businessShowCaseImages,
