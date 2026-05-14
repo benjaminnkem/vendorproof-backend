@@ -42,10 +42,10 @@ export type DashboardAnalytics = {
   currentTier: TierNames;
   nextTier?: TierNames;
   kycScores: {
-    document: number;
-    biometric: number;
-    transactionsConsistency: number;
-    scoresToNextTier: number;
+    document?: number;
+    biometric?: number;
+    transactionsConsistency?: number;
+    scoresToNextTier?: number;
   };
 
   totalEarnings: number;
@@ -68,7 +68,7 @@ export type DashboardAnalytics = {
     amount: number;
     date: string;
     status: string;
-  };
+  }[];
 };
 
 export type ActivityAnalytics = {

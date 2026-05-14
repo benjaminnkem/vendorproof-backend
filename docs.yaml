@@ -6,6 +6,7 @@ info:
 tags:
   - name: Auth
   - name: Business
+  - name: Analytics
   - name: Config
   - name: System
   - name: Triangle
@@ -933,6 +934,87 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetBusinessTransactionHistorySuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/analytics/me/dashboard:
+    get:
+      summary: Get dashboard analytics
+      description: Returns high-level dashboard analytics for the authenticated business including KYC score breakdown, weekly earnings, trust score trajectory, and recent orders.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Dashboard analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetDashboardAnalyticsSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/analytics/me/activity:
+    get:
+      summary: Get activity analytics
+      description: Returns transaction activity analytics for the authenticated business including transaction counts, daily volume, and latest transaction snapshot.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Activity analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetActivityAnalyticsSuccessResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 401
+                message: Unauthorized
+                timestamp: "2026-05-10T12:00:00.000Z"
+
+  /api/analytics/me/profile:
+    get:
+      summary: Get profile analytics
+      description: Returns profile-focused analytics for the authenticated business including earnings summary and KYC status metrics.
+      tags:
+        - Analytics
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Profile analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetProfileAnalyticsSuccessResponse"
         "401":
           description: Unauthorized
           content:
@@ -2481,6 +2563,221 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/TransactionHistoryItem"
+
+    DashboardKycScores:
+      type: object
+      properties:
+        document:
+          type: number
+          example: 78.4
+        biometric:
+          type: number
+          example: 85
+        transactionsConsistency:
+          type: number
+          example: 66.67
+        scoresToNextTier:
+          type: number
+          example: 7.5
+
+    DashboardWeeklyEarningsItem:
+      type: object
+      properties:
+        day:
+          type: string
+          example: Monday
+        earnings:
+          type: number
+          example: 150000
+
+    DashboardScoreTrajectoryItem:
+      type: object
+      properties:
+        month:
+          type: string
+          example: May 2026
+        score:
+          type: number
+          example: 74.5
+
+    DashboardRecentOrderItem:
+      type: object
+      properties:
+        buyerName:
+          type: string
+          example: Emeka Obi
+        amount:
+          type: number
+          example: 25000
+        date:
+          type: string
+          format: date-time
+          example: "2026-05-13T14:22:10.000Z"
+        status:
+          type: string
+          example: COMPLETED
+
+    DashboardAnalyticsData:
+      type: object
+      properties:
+        trustScore:
+          type: number
+          example: 72.5
+        currentTier:
+          type: string
+          example: BRONZE
+        nextTier:
+          type: string
+          nullable: true
+          example: SILVER
+        kycScores:
+          $ref: "#/components/schemas/DashboardKycScores"
+        totalEarnings:
+          type: number
+          example: 3600000
+        totalOrders:
+          type: integer
+          example: 48
+        averageMonthlyEarnings:
+          type: number
+          example: 300000
+        disputesCount:
+          type: integer
+          example: 0
+        weeklyEarnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardWeeklyEarningsItem"
+        scoreTrajectory:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardScoreTrajectoryItem"
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardRecentOrderItem"
+
+    GetDashboardAnalyticsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/DashboardAnalyticsData"
+
+    ActivityTransactionSnapshot:
+      type: object
+      properties:
+        buyerName:
+          type: string
+          example: Emeka Obi
+        amount:
+          type: number
+          example: 15000
+        date:
+          type: string
+          format: date-time
+          example: "2026-05-13T14:22:10.000Z"
+        status:
+          type: string
+          example: COMPLETED
+
+    ActivityDailyVolumeItem:
+      type: object
+      properties:
+        day:
+          type: string
+          example: Tuesday
+        volume:
+          type: number
+          example: 90000
+
+    ActivityAnalyticsData:
+      type: object
+      properties:
+        totalTransactions:
+          type: integer
+          example: 112
+        transactions:
+          $ref: "#/components/schemas/ActivityTransactionSnapshot"
+        dailyVolume:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDailyVolumeItem"
+        totalVolume:
+          type: number
+          example: 5400000
+        completedTransactions:
+          type: integer
+          example: 98
+        pendingTransactions:
+          type: integer
+          example: 9
+        failedTransactions:
+          type: integer
+          example: 5
+
+    GetActivityAnalyticsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/ActivityAnalyticsData"
+
+    ProfileKycStatus:
+      type: object
+      properties:
+        document:
+          type: number
+          example: 78.4
+        biometric:
+          type: number
+          example: 85
+        transactionsConsistency:
+          type: number
+          example: 66.67
+        scoresToNextTier:
+          type: number
+          example: 7.5
+
+    ProfileAnalyticsData:
+      type: object
+      properties:
+        totalEarnings:
+          type: number
+          example: 3600000
+        totalOrders:
+          type: integer
+          example: 48
+        averageMonthlyEarnings:
+          type: number
+          example: 300000
+        disputesCount:
+          type: integer
+          example: 0
+        kycStatus:
+          $ref: "#/components/schemas/ProfileKycStatus"
+
+    GetProfileAnalyticsSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        data:
+          $ref: "#/components/schemas/ProfileAnalyticsData"
 
     GetPaymentPageSuccessResponse:
       type: object

@@ -3,6 +3,7 @@ import triangleRouter from "./triangle.route";
 import authRouter from "./auth.route";
 import businessRouter from "./business.route";
 import payRouter from "./pay.route";
+import analyticsRouter from "./analytics.route";
 
 import * as miscController from "../controllers/misc.controller";
 
@@ -17,5 +18,6 @@ router.use("/auth", authRouter);
 router.use("/business", businessRouter);
 router.use("/pay", payRouter);
 router.use("/triangle", triangleRouter);
+router.use("/analytics", analyticsRouter);
 
 export default router;

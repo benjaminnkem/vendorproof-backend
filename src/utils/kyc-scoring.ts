@@ -5,7 +5,7 @@ type WeightedScoreInput = {
   tin?: number;
 };
 
-const WEIGHTS = {
+export const KYC_WEIGHTS = {
   selfie: 10,
   nin: 10,
   cac: 20,
@@ -109,10 +109,10 @@ export const weightedBusinessTrustScore = (
   input: WeightedScoreInput,
 ): number => {
   const entries = [
-    ["selfie", input.selfie, WEIGHTS.selfie],
-    ["nin", input.nin, WEIGHTS.nin],
-    ["cac", input.cac, WEIGHTS.cac],
-    ["tin", input.tin, WEIGHTS.tin],
+    ["selfie", input.selfie, KYC_WEIGHTS.selfie],
+    ["nin", input.nin, KYC_WEIGHTS.nin],
+    ["cac", input.cac, KYC_WEIGHTS.cac],
+    ["tin", input.tin, KYC_WEIGHTS.tin],
   ] as const;
 
   const available = entries.filter(([, score]) => typeof score === "number");
