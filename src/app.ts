@@ -11,11 +11,13 @@ import router from "./routes";
 
 const app = express();
 
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    (req as any).rawBody = buf.toString("utf8");
-  },
-}));
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf.toString("utf8");
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use(
@@ -33,7 +35,14 @@ app.use(
   }),
 );
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://vendorproof-frontend.oluwadunsin.dev",
+    ],
+  }),
+);
 app.use(
   helmet({
     contentSecurityPolicy: {

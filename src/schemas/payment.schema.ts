@@ -48,8 +48,17 @@ export const submitRatingSchema = object({
 export type SubmitRatingInput = ReturnType<typeof submitRatingSchema.parse>;
 
 export const getBusinessTransactionHistoryQuerySchema = object({
-  page: number().int().positive().default(1),
-  limit: number().int().positive().max(100).default(10),
+  page: number()
+    .int()
+    .positive()
+    .default(1)
+    .transform((val) => (val ? (isNaN(Number(val)) ? 1 : Number(val)) : 1)),
+  limit: number()
+    .int()
+    .positive()
+    .max(100)
+    .default(10)
+    .transform((val) => (val ? (isNaN(Number(val)) ? 10 : Number(val)) : 10)),
   status: enum_([
     PaymentStatus.COMPLETED,
     PaymentStatus.PENDING,

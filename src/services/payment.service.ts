@@ -108,7 +108,8 @@ const incrementBusinessTrustScoreAndMoveToNextTierIfNeeded = async (
 };
 
 const resolveLinkWithBaseUrl = (link: string) => {
-  return `${env.FRONTEND_URL}${link}`;
+  // return `${env.FRONTEND_URL}${link}`;
+  return link;
 };
 
 export const getOrCreateGenericPaymentLink = async (businessId: number) => {

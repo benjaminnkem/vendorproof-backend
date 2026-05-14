@@ -215,12 +215,11 @@ model TrustEntry {
 }
 
 model Tier {
-  id              Int       @id @default(autoincrement())
-  name            TierNames @unique
-  description     String?
-  minScore        Float
-  maxScore        Float?
-  maxPaymentLimit Float?
+  id          Int       @id @default(autoincrement())
+  name        TierNames @unique
+  description String?
+  minScore    Float
+  maxScore    Float?
 
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt

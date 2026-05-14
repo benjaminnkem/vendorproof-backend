@@ -9,7 +9,6 @@ export const runSeeds = async () => {
       maxScore: 0,
       name: TierNames.UNVERIFIED,
       description: "Unverified tier for businesses with no trust score.",
-      maxPaymentLimit: 1000,
     },
     {
       minScore: 1,
@@ -17,7 +16,6 @@ export const runSeeds = async () => {
       name: TierNames.BRONZE,
       description:
         "Bronze tier for businesses with a trust score between 1 and 39.",
-      maxPaymentLimit: 50000,
     },
     {
       minScore: 40,
@@ -25,7 +23,6 @@ export const runSeeds = async () => {
       name: TierNames.SILVER,
       description:
         "Silver tier for businesses with a trust score between 40 and 69.",
-      maxPaymentLimit: 150000,
     },
     {
       minScore: 70,
@@ -33,7 +30,6 @@ export const runSeeds = async () => {
       name: TierNames.GOLD,
       description:
         "Gold tier for businesses with a trust score between 70 and 89.",
-      maxPaymentLimit: 500000,
     },
     {
       minScore: 90,
@@ -53,4 +49,36 @@ export const runSeeds = async () => {
   } else {
     logger.info("Tiers already exist. Skipping seeding.");
   }
+
+  // seed transactions
+  const businesses = await prisma.business.findMany();
+  const transactions: Prisma.PaymentCreateInput[] = [];
+
+  for (const business of businesses) {
+    for (let i = 0; i < 5; i++) {
+      transactions.push({
+        amount: Math.floor(Math.random() * 1000) + 1,
+        business: { connect: { id: business.id } },
+        status: "COMPLETED",
+        createdAt: new Date(),
+        buyerEmail: `buyer${Math.floor(Math.random() * 1000)}@example.com`,
+        buyerName: `Buyer ${Math.floor(Math.random() * 1000)}`,
+        paymentLink: {
+          create: {
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // expires in 7 days
+            type: `QUICK`,
+            business: { connect: { id: business.id } },
+            token: `token_${Math.random().toString(36).substring(2, 15)}`,
+          },
+        },
+        squadRef: `squad_${Math.random().toString(36).substring(2, 15)}`,
+      });
+
+      await prisma.payment.create({
+        data: transactions[transactions.length - 1]!,
+      });
+    }
+  }
+
+  logger.info("Transactions seeded successfully.");
 };
