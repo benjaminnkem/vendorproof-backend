@@ -88,10 +88,6 @@ const incrementBusinessTrustScoreAndMoveToNextTierIfNeeded = async (
       data: {
         businessId,
         score: newScore,
-        scoreIncrement: increment,
-        comment: `Trust score increased by ${increment.toFixed(
-          2,
-        )} points for receiving a payment of $${amount.toFixed(2)}`,
       },
     }),
     prisma.trustEntry.create({
@@ -99,7 +95,9 @@ const incrementBusinessTrustScoreAndMoveToNextTierIfNeeded = async (
         businessId,
         rating: null,
         scoreIncrement: increment,
-        comment: `Received a payment of $${amount.toFixed(2)}`,
+        reason: `Trust score increased by ${increment.toFixed(
+          2,
+        )} points for receiving a payment of $${amount.toFixed(2)}`,
         scoreBefore: business.trustScore,
         scoreAfter: newScore,
       },
@@ -472,6 +470,8 @@ export const initiatePayment = async (
       ratingTokenExpiresAt,
       squadRef,
       status: "PENDING",
+      submittedRating: payload.rating!,
+      feedback: payload.feedback!,
     },
     select: { id: true, amount: true, isServiceRendered: true },
   });
@@ -520,6 +520,7 @@ export const initiatePayment = async (
     amount: payment.amount,
     checkoutUrl: squadResult.checkoutUrl,
     message: "Proceed to checkout to complete your payment.",
+    ratingToken: payment.isServiceRendered ? ratingToken : undefined,
   };
 };
 
@@ -602,6 +603,13 @@ const confirmPayment = async (squadRef: string) => {
     payment.businessId,
     payment.amount,
   );
+
+  if (payment.isServiceRendered) {
+    await submitRating(payment.ratingToken!, {
+      rating: payment.submittedRating!,
+      comment: payment.feedback!,
+    });
+  }
 };
 
 export const handleSquadWebhook = async (
@@ -753,7 +761,7 @@ export const submitRating = async (
   await prisma.$transaction([
     prisma.paymentRating.create({
       data: {
-        paymentId: payment.id,
+        payment: { connect: { id: payment.id } },
         rating: payload.rating,
         comment: payload.comment ?? null,
       },

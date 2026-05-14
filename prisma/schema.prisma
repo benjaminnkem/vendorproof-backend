@@ -290,6 +290,8 @@ model Payment {
   ratingTokenExpiresAt DateTime?
   status               PaymentStatus @default(PENDING)
   squadRef             String?       @unique
+  submittedRating      Int?
+  feedback             String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

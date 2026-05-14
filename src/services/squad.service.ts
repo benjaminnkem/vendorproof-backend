@@ -2,14 +2,6 @@ import axios from "axios";
 import crypto from "crypto";
 import { env } from "../config/env";
 
-const squadClient = axios.create({
-  baseURL: env.SQUAD_BASE_URL,
-  headers: {
-    Authorization: `${env.SQUAD_SECRET_KEY}`,
-    "Content-Type": "application/json",
-  },
-});
-
 export interface SquadInitPayload {
   email: string;
   amount: number; // in NGN — will be converted to kobo
@@ -26,16 +18,22 @@ export interface SquadInitResult {
 export const initializeTransaction = async (
   payload: SquadInitPayload,
 ): Promise<SquadInitResult> => {
-  const { data } = await squadClient.post("/payment/initiate", {
-    email: payload.email,
-    amount: Math.round(payload.amount * 100), // kobo
-    currency: "NGN",
-    initiate_type: "inline",
-    transaction_ref: payload.transactionRef,
-    callback_url: payload.callbackUrl,
-    customer_name: payload.customerName,
-    pass_charge: false,
-  });
+  const { data } = await axios.post(
+    `${env.SQUAD_BASE_URL}/transaction/initiate`,
+    {
+      email: payload.email,
+      amount: Math.round(payload.amount * 100), // kobo
+      currency: "NGN",
+      initiate_type: "inline",
+      transaction_ref: payload.transactionRef,
+    },
+    {
+      headers: {
+        Authorization: `${env.SQUAD_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+    },
+  );
 
   return {
     checkoutUrl: data.data.checkout_url,
@@ -44,8 +42,14 @@ export const initializeTransaction = async (
 };
 
 export const verifyTransaction = async (transactionRef: string) => {
-  const { data } = await squadClient.get(
-    `/transaction/verify/${transactionRef}`,
+  const { data } = await axios.get(
+    `${env.SQUAD_BASE_URL}/transaction/verify/${transactionRef}`,
+    {
+      headers: {
+        Authorization: `${env.SQUAD_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+    },
   );
   return data.data as {
     transaction_status: string;

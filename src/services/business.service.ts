@@ -10,42 +10,51 @@ import {
 import cloudinaryHttpService from "../infra/cloudinary/http-service";
 import { slugify } from "../utils";
 import { BusinessWhereInput } from "../generated/prisma/models";
+import { getOrCreateGenericPaymentLink } from "./payment.service";
 
 export const getPublicProfile = async (slug: string) => {
-  const business = await prisma.business.findUnique({
-    where: { slug },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      logo: true,
-      showCaseImages: true,
-      email: true,
-      phoneNumber: true,
-      alternativePhoneNumber: true,
-      category: true,
-      slug: true,
-      trustScore: true,
-      kycStatus: true,
-      paymentLink: true,
-      qrCodeUrl: true,
-      createdAt: true,
-      socials: { select: { id: true, platform: true, url: true } },
-      tier: { select: { name: true, description: true } },
-      trustScoreHistories: {
-        orderBy: { createdAt: "desc" },
-        take: 10,
-        select: { score: true, createdAt: true },
+  const getBusinessData = async () =>
+    await prisma.business.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        logo: true,
+        showCaseImages: true,
+        email: true,
+        phoneNumber: true,
+        alternativePhoneNumber: true,
+        category: true,
+        slug: true,
+        trustScore: true,
+        kycStatus: true,
+        paymentLink: true,
+        qrCodeUrl: true,
+        createdAt: true,
+        socials: { select: { id: true, platform: true, url: true } },
+        tier: { select: { name: true, description: true } },
+        trustScoreHistories: {
+          orderBy: { createdAt: "asc" },
+          take: 10,
+          select: { score: true, createdAt: true },
+        },
+        services: { select: { id: true, name: true, description: true } },
       },
-      services: { select: { id: true, name: true, description: true } },
-    },
-  });
+    });
+  let business = await getBusinessData();
 
   if (!business) {
     throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
   }
 
-  const extras = await getBusinessExtras(business.id);
+  if (!business.paymentLink) {
+    await getOrCreateGenericPaymentLink(business.id);
+
+    business = await getBusinessData();
+  }
+
+  const extras = await getBusinessExtras(business!.id);
 
   const formattedBusiness = {
     ...business,
