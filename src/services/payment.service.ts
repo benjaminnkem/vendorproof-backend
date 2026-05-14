@@ -786,12 +786,17 @@ export const getBusinessTransactionHistory = async (
   const { page, limit } = query;
   const skip = (page - 1) * limit;
 
+  const filter = {
+    businessId,
+    ...(query.status ? { status: query.status } : {}),
+  };
+
   const [total, transactions] = await prisma.$transaction([
     prisma.payment.count({
-      where: { businessId },
+      where: filter,
     }),
     prisma.payment.findMany({
-      where: { businessId },
+      where: filter,
       select: {
         id: true,
         amount: true,

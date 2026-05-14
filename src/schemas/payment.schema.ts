@@ -1,4 +1,5 @@
-import { boolean, coerce, number, object, string } from "zod";
+import { boolean, coerce, number, object, string, enum as enum_ } from "zod";
+import { PaymentStatus } from "../generated/prisma/enums";
 
 export const createServiceSchema = object({
   name: string().min(1, "Service name is required"),
@@ -49,6 +50,11 @@ export type SubmitRatingInput = ReturnType<typeof submitRatingSchema.parse>;
 export const getBusinessTransactionHistoryQuerySchema = object({
   page: number().int().positive().default(1),
   limit: number().int().positive().max(100).default(10),
+  status: enum_([
+    PaymentStatus.COMPLETED,
+    PaymentStatus.PENDING,
+    PaymentStatus.FAILED,
+  ]).optional(),
 });
 
 export type GetBusinessTransactionHistoryQueryInput = ReturnType<
