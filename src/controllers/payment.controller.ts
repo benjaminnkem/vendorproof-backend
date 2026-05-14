@@ -8,6 +8,7 @@ import {
   createQuickLinkSchema,
   initiatePaymentSchema,
   submitRatingSchema,
+  getBusinessTransactionHistoryQuerySchema,
 } from "../schemas/payment.schema";
 import * as paymentService from "../services/payment.service";
 
@@ -60,13 +61,11 @@ export const updateService = asyncHandler(
 export const deleteService = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     await paymentService.deleteService(req.businessId!, Number(req.params.id));
-    res
-      .status(HttpStatus.OK)
-      .json({
-        status: "success",
-        statusCode: HttpStatus.OK,
-        message: "Service deleted",
-      });
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message: "Service deleted",
+    });
   },
 );
 
@@ -95,13 +94,11 @@ export const deleteQuickLink = asyncHandler(
       req.businessId!,
       Number(req.params.id),
     );
-    res
-      .status(HttpStatus.OK)
-      .json({
-        status: "success",
-        statusCode: HttpStatus.OK,
-        message: "Quick link deleted",
-      });
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message: "Quick link deleted",
+    });
   },
 );
 
@@ -176,11 +173,20 @@ export const submitRating = asyncHandler(
 
 export const getBusinessTransactionHistory = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const data = await paymentService.getBusinessTransactionHistory(
-      req.businessId!,
-    );
+    const query = getBusinessTransactionHistoryQuerySchema.parse(req.query);
+    const { message, data, meta } =
+      await paymentService.getBusinessTransactionHistory(
+        req.businessId!,
+        query,
+      );
     res
       .status(HttpStatus.OK)
-      .json({ status: "success", statusCode: HttpStatus.OK, data });
+      .json({
+        status: "success",
+        statusCode: HttpStatus.OK,
+        message,
+        data,
+        meta,
+      });
   },
 );

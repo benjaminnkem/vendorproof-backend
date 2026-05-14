@@ -10,6 +10,7 @@ import {
   CreateQuickLinkInput,
   InitiatePaymentInput,
   SubmitRatingInput,
+  GetBusinessTransactionHistoryQueryInput,
 } from "../schemas/payment.schema";
 import { getBusinessExtras } from "./business.service";
 
@@ -19,6 +20,91 @@ const RATING_SCORE_DELTA: Record<number, number> = {
   3: 0,
   4: 1.5,
   5: 3,
+};
+
+const MAX_SCORE_AMOUNT_THRESHOLDS = [
+  { threshold: 1000, maxScore: 0.5 },
+  { threshold: 10000, maxScore: 1 },
+  { threshold: 50000, maxScore: 2 },
+  { threshold: 200000, maxScore: 4 },
+  { threshold: 1000000, maxScore: 6 },
+  { threshold: Infinity, maxScore: 10 },
+];
+
+const getAmountThreshold = (
+  amount: number,
+): (typeof MAX_SCORE_AMOUNT_THRESHOLDS)[number] | undefined => {
+  for (const { threshold, maxScore } of MAX_SCORE_AMOUNT_THRESHOLDS) {
+    if (amount <= threshold) {
+      return { threshold, maxScore };
+    }
+  }
+};
+
+const calculateTrustScoreIncrementForAmountPaid = (amount: number) => {
+  const thresholdInfo = getAmountThreshold(amount);
+  if (!thresholdInfo) return 0;
+  const { threshold, maxScore } = thresholdInfo;
+
+  const scaledScore = (amount / threshold) * maxScore;
+
+  return Math.min(scaledScore, maxScore);
+};
+
+const incrementBusinessTrustScoreAndMoveToNextTierIfNeeded = async (
+  businessId: number,
+  amount: number,
+) => {
+  const increment = calculateTrustScoreIncrementForAmountPaid(amount);
+  if (increment === 0) return;
+
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    select: { trustScore: true, tier: { select: { name: true, id: true } } },
+  });
+
+  if (!business) return;
+
+  const newScore = Math.min(100, business.trustScore + increment);
+
+  const nextTier = await prisma.tier.findFirst({
+    where: {
+      minScore: { lte: newScore },
+      maxScore: { gte: newScore },
+    },
+  });
+
+  const hasNextTier = nextTier && nextTier.id !== business.tier!.id;
+
+  await prisma.$transaction([
+    prisma.business.update({
+      where: { id: businessId },
+      data: {
+        trustScore: newScore,
+        ...(hasNextTier ? { tierId: nextTier.id } : {}),
+      },
+    }),
+    prisma.trustScoreHistory.create({
+      data: {
+        businessId,
+        score: newScore,
+        scoreIncrement: increment,
+        comment: `Trust score increased by ${increment.toFixed(
+          2,
+        )} points for receiving a payment of $${amount.toFixed(2)}`,
+      },
+    }),
+    prisma.trustEntry.create({
+      data: {
+        businessId,
+        rating: null,
+        scoreIncrement: increment,
+        comment: `Received a payment of $${amount.toFixed(2)}`,
+        scoreBefore: business.trustScore,
+        scoreAfter: newScore,
+      },
+    }),
+  ]);
 };
 
 const resolveLinkWithBaseUrl = (link: string) => {
@@ -506,10 +592,15 @@ export const verifyPayment = async (squadRef: string) => {
 };
 
 const confirmPayment = async (squadRef: string) => {
-  await prisma.payment.update({
+  const payment = await prisma.payment.update({
     where: { squadRef },
     data: { status: "COMPLETED" },
   });
+
+  await incrementBusinessTrustScoreAndMoveToNextTierIfNeeded(
+    payment.businessId,
+    payment.amount,
+  );
 };
 
 export const handleSquadWebhook = async (
@@ -688,22 +779,45 @@ export const submitRating = async (
   return { message: "Thank you for your feedback!", newTrustScore: scoreAfter };
 };
 
-export const getBusinessTransactionHistory = async (businessId: number) => {
-  const transactions = await prisma.payment.findMany({
-    where: { businessId },
-    select: {
-      id: true,
-      amount: true,
-      status: true,
-      createdAt: true,
-      buyerName: true,
-      buyerEmail: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export const getBusinessTransactionHistory = async (
+  businessId: number,
+  query: GetBusinessTransactionHistoryQueryInput,
+) => {
+  const { page, limit } = query;
+  const skip = (page - 1) * limit;
+
+  const [total, transactions] = await prisma.$transaction([
+    prisma.payment.count({
+      where: { businessId },
+    }),
+    prisma.payment.findMany({
+      where: { businessId },
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        createdAt: true,
+        buyerName: true,
+        buyerEmail: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
 
   return {
     message: "Transaction history retrieved successfully",
     data: transactions,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
   };
 };

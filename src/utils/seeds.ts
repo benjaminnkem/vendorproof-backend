@@ -9,6 +9,7 @@ export const runSeeds = async () => {
       maxScore: 0,
       name: TierNames.UNVERIFIED,
       description: "Unverified tier for businesses with no trust score.",
+      maxPaymentLimit: 1000,
     },
     {
       minScore: 1,
@@ -16,6 +17,7 @@ export const runSeeds = async () => {
       name: TierNames.BRONZE,
       description:
         "Bronze tier for businesses with a trust score between 1 and 39.",
+      maxPaymentLimit: 50000,
     },
     {
       minScore: 40,
@@ -23,6 +25,7 @@ export const runSeeds = async () => {
       name: TierNames.SILVER,
       description:
         "Silver tier for businesses with a trust score between 40 and 69.",
+      maxPaymentLimit: 150000,
     },
     {
       minScore: 70,
@@ -30,6 +33,7 @@ export const runSeeds = async () => {
       name: TierNames.GOLD,
       description:
         "Gold tier for businesses with a trust score between 70 and 89.",
+      maxPaymentLimit: 500000,
     },
     {
       minScore: 90,

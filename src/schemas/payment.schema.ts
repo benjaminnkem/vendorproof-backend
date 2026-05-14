@@ -1,4 +1,4 @@
-import { boolean, number, object, string } from "zod";
+import { boolean, coerce, number, object, string } from "zod";
 
 export const createServiceSchema = object({
   name: string().min(1, "Service name is required"),
@@ -24,7 +24,9 @@ export const createQuickLinkSchema = object({
   expiresInHours: number().int().positive().optional(),
 });
 
-export type CreateQuickLinkInput = ReturnType<typeof createQuickLinkSchema.parse>;
+export type CreateQuickLinkInput = ReturnType<
+  typeof createQuickLinkSchema.parse
+>;
 
 export const initiatePaymentSchema = object({
   buyerName: string().min(1, "Buyer name is required"),
@@ -33,7 +35,9 @@ export const initiatePaymentSchema = object({
   isServiceRendered: boolean().optional(),
 });
 
-export type InitiatePaymentInput = ReturnType<typeof initiatePaymentSchema.parse>;
+export type InitiatePaymentInput = ReturnType<
+  typeof initiatePaymentSchema.parse
+>;
 
 export const submitRatingSchema = object({
   rating: number().int().min(1).max(5),
@@ -41,3 +45,12 @@ export const submitRatingSchema = object({
 });
 
 export type SubmitRatingInput = ReturnType<typeof submitRatingSchema.parse>;
+
+export const getBusinessTransactionHistoryQuerySchema = object({
+  page: number().int().positive().default(1),
+  limit: number().int().positive().max(100).default(10),
+});
+
+export type GetBusinessTransactionHistoryQueryInput = ReturnType<
+  typeof getBusinessTransactionHistoryQuerySchema.parse
+>;
