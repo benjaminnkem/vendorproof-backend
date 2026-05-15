@@ -34,7 +34,7 @@ export const initiatePaymentSchema = object({
   buyerEmail: string().email("Valid email is required"),
   amount: number().positive("Amount must be a positive number").optional(),
   isServiceRendered: boolean().optional(),
-  rating: number().int().min(1).max(5).optional(),
+  rating: number().int().optional(),
   feedback: string().optional(),
 });
 

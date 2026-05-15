@@ -160,6 +160,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /api/auth/signup/step-5:
+    post:
+      summary: Initiate business onboarding fee payment
+      description: Starts onboarding fee checkout for the authenticated business, or returns a success message if already paid.
+      tags:
+        - Auth
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Onboarding fee initiation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignUpStep5SuccessResponse"
+        "404":
+          description: Business not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /api/auth/signin:
     post:
       summary: Request signin OTP
@@ -1098,10 +1120,42 @@ paths:
                 message: Payment not found
                 timestamp: "2026-05-10T12:00:00.000Z"
 
+  /api/pay/onboarding-fee/verify/{transactionReference}:
+    get:
+      summary: Verify onboarding fee payment
+      description: Verifies onboarding fee payment by transaction reference and updates business onboarding status when payment is confirmed.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: transactionReference
+          required: true
+          schema:
+            type: string
+            example: onboarding_abc123xyz
+      responses:
+        "200":
+          description: Onboarding fee verification result returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyOnboardingFeeSuccessResponse"
+        "404":
+          description: Onboarding transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Onboarding transaction not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
   /api/pay/webhook/squad:
     post:
       summary: Squad payment webhook
-      description: Receives payment event notifications from Squad. The request body is verified using the `x-squad-encrypted-body` HMAC signature header before processing. This endpoint is called by Squad — not by your frontend.
+      description: Receives payment event notifications from Squad for both regular payments and onboarding-fee transactions. The request body is verified using the `x-squad-encrypted-body` HMAC signature header before processing.
       tags:
         - Pay
       parameters:
@@ -1121,7 +1175,7 @@ paths:
               properties:
                 Event:
                   type: string
-                  example: charge_completed
+                  example: charge_successful
                 Body:
                   type: object
                   properties:
@@ -1468,6 +1522,9 @@ components:
       required:
         - businessName
       properties:
+        isBusinessRegistered:
+          type: boolean
+          example: true
         businessName:
           type: string
           example: Ada Groceries Ltd
@@ -1532,6 +1589,29 @@ components:
             accessToken:
               type: string
               example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    SignUpStep5SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Onboarding fee initiated successfully
+        data:
+          type: object
+          nullable: true
+          properties:
+            checkoutUrl:
+              type: string
+              example: https://checkout.squadco.com/pay/abc123
+            transactionReference:
+              type: string
+              example: onboarding_abc123xyz
 
     SignInRequest:
       type: object
@@ -2379,6 +2459,39 @@ components:
               nullable: true
               description: Present when payment is completed.
               example: 5000
+            buyerName:
+              type: string
+              nullable: true
+              example: Emeka Obi
+            buyerEmail:
+              type: string
+              format: email
+              nullable: true
+              example: emeka@example.com
+            transactionReference:
+              type: string
+              nullable: true
+              example: SQCHIZ12345678
+
+    VerifyOnboardingFeeSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        statusCode:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Onboarding fee payment confirmed
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [COMPLETED, PENDING]
+              example: COMPLETED
 
     CreateQuickLinkRequest:
       type: object
@@ -2985,16 +3098,23 @@ components:
           format: email
           example: emeka@example.com
         amount:
-          type: string
-          description: Required when the payment link has no fixed amount. Pass as a numeric string.
-          example: "5000"
+          type: number
+          description: Required when the payment link has no fixed amount.
+          example: 5000
         isServiceRendered:
+          type: boolean
+          description: Pass true if the service has already been delivered.
+          example: false
+        rating:
+          type: integer
+          description: Optional immediate rating value when service is already rendered.
+          minimum: 1
+          maximum: 5
+          example: 5
+        feedback:
           type: string
-          description: Pass "true" if the service has already been delivered. A rating token is returned immediately instead of waiting for an email.
-          enum:
-            - "true"
-            - "false"
-          example: "false"
+          description: Optional feedback text captured alongside an immediate rating.
+          example: Great service and fast delivery.
 
     InitiatePaymentSuccessResponse:
       type: object
@@ -3014,9 +3134,9 @@ components:
             amount:
               type: number
               example: 5000
-            isServiceRendered:
-              type: boolean
-              example: false
+            checkoutUrl:
+              type: string
+              example: https://checkout.squadco.com/pay/abc123
             ratingToken:
               type: string
               nullable: true
@@ -3024,7 +3144,7 @@ components:
               example: null
             message:
               type: string
-              example: Payment recorded. You will receive an email to rate this vendor after the service is delivered.
+              example: Proceed to checkout to complete your payment.
 
     GetRatingPageSuccessResponse:
       type: object

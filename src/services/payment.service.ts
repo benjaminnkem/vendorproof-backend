@@ -519,30 +519,6 @@ export const initiatePayment = async (
     throw err;
   }
 
-  if (!payment.isServiceRendered) {
-    const rateUrl = `${env.FRONTEND_URL}/rate/${ratingToken}`;
-    const business = await prisma.business.findUnique({
-      where: { id: link.businessId },
-      select: { name: true },
-    });
-
-    try {
-      await sendMail({
-        to: payload.buyerEmail,
-        template: "rate-vendor-service.ejs",
-        subject: "Rate this vendor after service is rendered",
-        data: {
-          buyerName: payload.buyerName,
-          vendorName: business?.name ?? "this vendor",
-          amountPaid: amount.toFixed(2),
-          rateUrl,
-        },
-      });
-    } catch (error) {
-      logger.warn("Failed to send rate vendor email", error);
-    }
-  }
-
   return {
     paymentId: payment.id,
     amount: payment.amount,
@@ -637,6 +613,30 @@ const confirmPayment = async (squadRef: string) => {
       rating: payment.submittedRating!,
       comment: payment.feedback!,
     });
+  } else {
+    if (!payment.isServiceRendered) {
+      const rateUrl = `${env.FRONTEND_URL}/rate/${payment.ratingToken}`;
+      const business = await prisma.business.findUnique({
+        where: { id: payment.businessId },
+        select: { name: true },
+      });
+
+      try {
+        await sendMail({
+          to: payment.buyerEmail,
+          template: "rate-vendor-service.ejs",
+          subject: "Rate this vendor after service is rendered",
+          data: {
+            buyerName: payment.buyerName,
+            vendorName: business?.name ?? "this vendor",
+            amountPaid: payment.amount.toFixed(2),
+            rateUrl,
+          },
+        });
+      } catch (error) {
+        logger.warn("Failed to send rate vendor email", error);
+      }
+    }
   }
 };
 
