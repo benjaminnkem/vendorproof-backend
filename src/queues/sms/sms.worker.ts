@@ -10,7 +10,7 @@ export const smsWorker = new Worker<SendSmsRequest>(
   async (job) => {
     try {
       logger.info(
-        `[SMS_QUEUE] Processing job ${job.id} for sending sms to ${job.data.to.join(", ")}`,
+        `[SMS_QUEUE]: Processing job ${job.id} for sending sms to ${job.data.to.join(", ")}`,
       );
       return await smsGateService.sendSms(job.data);
     } catch (error) {
