@@ -183,9 +183,7 @@ const preprocessForOcrVariants = async (
 
   return [
     { name: "balanced", image: balanced },
-    { name: "high-contrast", image: highContrast },
     { name: "adaptive-light", image: adaptiveLight },
-    { name: "adaptive-dark", image: adaptiveDark },
     { name: "text-ink", image: textInk },
   ];
 };
@@ -224,18 +222,6 @@ const preprocessNinFieldVariants = async (
       top: Math.floor(height * 0.23),
       width: Math.ceil(width * 0.5),
       height: Math.ceil(height * 0.14),
-    },
-    {
-      left: Math.floor(width * 0.02),
-      top: Math.floor(height * 0.25),
-      width: Math.ceil(width * 0.46),
-      height: Math.ceil(height * 0.11),
-    },
-    {
-      left: Math.floor(width * 0.08),
-      top: Math.floor(height * 0.24),
-      width: Math.ceil(width * 0.36),
-      height: Math.ceil(height * 0.1),
     },
   ];
 
@@ -450,7 +436,7 @@ const extractLikelyBusinessNameFromLines = (
 const recognizeBestText = async (image: Buffer): Promise<string> => {
   const variants = await preprocessForOcrVariants(image);
   const worker = await createWorker("eng");
-  const psmModes = [PSM.SINGLE_BLOCK, PSM.AUTO, PSM.SPARSE_TEXT];
+  const psmModes = [PSM.SINGLE_BLOCK, PSM.SPARSE_TEXT];
 
   try {
     const attempts: OcrAttempt[] = [];
@@ -775,7 +761,7 @@ export const extractCacDataFromImageUrl = async (
     const attempts: OcrAttempt[] = [];
 
     for (const variant of variants) {
-      for (const psm of [PSM.SINGLE_BLOCK, PSM.AUTO, PSM.SPARSE_TEXT]) {
+      for (const psm of [PSM.SINGLE_BLOCK, PSM.SPARSE_TEXT]) {
         await worker.setParameters({
           preserve_interword_spaces: "1",
           tessedit_pageseg_mode: psm,

@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import { bufferUploader } from "../utils";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { authenticate } from "../config/auth-middleware";
 
 const authRouter = Router();
 
@@ -30,7 +31,7 @@ authRouter.post(
   authController.signUpStep4,
 );
 
-authRouter.post("/signup/step-5", authMiddleware, authController.signUpStep5);
+authRouter.post("/signup/step-5", authenticate, authController.signUpStep5);
 
 authRouter.post("/signin", authController.signIn);
 authRouter.post("/verify-signin-otp", authController.verifySignInOtp);

@@ -27,7 +27,10 @@ export const signUpStep3Schema = object({
 });
 
 export const signUpStep4Schema = object({
-  isBusinessRegistered: boolean().optional().default(false),
+  isBusinessRegistered: string()
+    .optional()
+    .default("false")
+    .transform((val: any) => (val ? (val == "true" ? true : false) : val)),
   businessName: string().min(1, "Business name is required"),
   businessDescription: string().optional(),
   businessEmail: email("Invalid business email address").optional(),
