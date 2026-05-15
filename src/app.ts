@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import compression from "compression";
 import { env } from "./config/env";
 import { CustomError, HttpStatus } from "./@types";
@@ -21,15 +20,6 @@ app.use(
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 
 app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 100,
-    message:
-      "Too many requests from this IP, please try again after 15 minutes",
-  }),
-);
-
-app.use(
   compression({
     level: 6,
   }),
@@ -37,10 +27,7 @@ app.use(
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://vendorproof-frontend.oluwadunsin.dev",
-    ],
+    origin: "*",
   }),
 );
 app.use(

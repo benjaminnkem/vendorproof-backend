@@ -18,6 +18,7 @@ import {
 } from "../schemas/auth.schema";
 import * as authService from "../services/auth.service";
 import { parseJsonField } from "../utils";
+import { AuthRequest } from "../config/auth-middleware";
 
 export const signUpStep1 = asyncHandler(async (req: Request, res) => {
   const payload = signUpStep1Schema.parse(req.body);
@@ -66,6 +67,12 @@ export const signUpStep4 = asyncHandler(async (req: Request, res) => {
   const payload = signUpStep4Schema.parse(parsedBody) as SignUpStep4Input;
 
   const response = await authService.signUpStep4(req.userId!, payload);
+
+  res.status(response.statusCode).json(response);
+});
+
+export const signUpStep5 = asyncHandler(async (req: AuthRequest, res) => {
+  const response = await authService.signUpStep5(req.businessId!);
 
   res.status(response.statusCode).json(response);
 });

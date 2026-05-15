@@ -96,9 +96,11 @@ model Business {
   bankDetails BankDetails[]
   tierId      Int?
 
-  services     Service[]
-  paymentLinks PaymentLink[]
-  payments     Payment[]
+  services               Service[]
+  paymentLinks           PaymentLink[]
+  payments               Payment[]
+  onboardingTransactions OnboardingTransaction[]
+  hasPaidOnboardingFee   Boolean                 @default(false)
 
   @@index([ownerId], name: "idx_business_owner_id")
   @@index([name], name: "idx_business_name")
@@ -315,6 +317,18 @@ model PaymentRating {
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   @@map("payment_ratings")
+}
+
+model OnboardingTransaction {
+  id         Int           @id @default(autoincrement())
+  businessId Int
+  amount     Float
+  reference  String        @unique
+  status     PaymentStatus @default(PENDING)
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
+
+  @@map("onboarding_transactions")
 }
 
 enum PaymentLinkType {

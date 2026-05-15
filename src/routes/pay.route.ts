@@ -12,4 +12,9 @@ payRouter.post("/rate/:ratingToken", paymentController.submitRating);
 payRouter.get("/:token", paymentController.getPaymentPage);
 payRouter.post("/:token", paymentController.initiatePayment);
 
+payRouter.get(
+  "/onboarding-fee/verify/:transactionReference",
+  paymentController.verifyOnboardingPayment,
+);
+
 export default payRouter;

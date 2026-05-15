@@ -26,7 +26,10 @@ import {
 import { smsQueue } from "../queues/sms/sms.queue";
 import { sign } from "jsonwebtoken";
 import { env } from "../config/env";
-import { getOrCreateGenericPaymentLink } from "./payment.service";
+import {
+  getOrCreateGenericPaymentLink,
+  initiateBusinessOnboardingFee,
+} from "./payment.service";
 
 const step1Action = async (phoneNumber: string) => {
   const userAuth = await prisma.userAuth.findFirst({
@@ -349,7 +352,7 @@ export const signUpStep4 = async (
     where: { userId },
     data: {
       accessToken,
-      authStep: null,
+      authStep: 5,
     },
   });
 
@@ -388,6 +391,38 @@ export const signUpStep4 = async (
     message: "Business created successfully",
     data: {
       accessToken,
+    },
+  };
+};
+
+export const signUpStep5 = async (businessId: number) => {
+  // initiate payment for onboarding fee
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+  });
+
+  if (!business) {
+    throw new CustomError(HttpStatus.NOT_FOUND, "Business not found");
+  }
+
+  if (business?.hasPaidOnboardingFee) {
+    return {
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message: "Onboarding fee already paid",
+    };
+  }
+
+  const { checkoutUrl, transactionReference } =
+    await initiateBusinessOnboardingFee(businessId);
+
+  return {
+    status: "success",
+    statusCode: HttpStatus.OK,
+    message: "Onboarding fee initiated successfully",
+    data: {
+      checkoutUrl,
+      transactionReference,
     },
   };
 };
@@ -503,6 +538,7 @@ export const verifySignInOtp = async (body: VerifySignInOtpInput) => {
   switch (auth.authStep) {
     case 3:
     case 4:
+    case 5:
       return {
         status: "success",
         statusCode: HttpStatus.OK,

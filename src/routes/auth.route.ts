@@ -30,6 +30,8 @@ authRouter.post(
   authController.signUpStep4,
 );
 
+authRouter.post("/signup/step-5", authMiddleware, authController.signUpStep5);
+
 authRouter.post("/signin", authController.signIn);
 authRouter.post("/verify-signin-otp", authController.verifySignInOtp);
 

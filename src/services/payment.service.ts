@@ -2,6 +2,8 @@ import { addHours, addDays } from "date-fns";
 import { CustomError, HttpStatus } from "../@types";
 import { prisma } from "../config/db";
 import { env } from "../config/env";
+import { logger } from "../config/logger";
+import { sendMail } from "../infra/mailer/service";
 import { createAndUploadQrCode, generateToken } from "../utils";
 import * as squadService from "./squad.service";
 import {
@@ -30,6 +32,8 @@ const MAX_SCORE_AMOUNT_THRESHOLDS = [
   { threshold: 1000000, maxScore: 6 },
   { threshold: Infinity, maxScore: 10 },
 ];
+
+const ONBOARDING_FEE_AMOUNT = 500;
 
 const getAmountThreshold = (
   amount: number,
@@ -515,6 +519,30 @@ export const initiatePayment = async (
     throw err;
   }
 
+  if (!payment.isServiceRendered) {
+    const rateUrl = `${env.FRONTEND_URL}/rate/${ratingToken}`;
+    const business = await prisma.business.findUnique({
+      where: { id: link.businessId },
+      select: { name: true },
+    });
+
+    try {
+      await sendMail({
+        to: payload.buyerEmail,
+        template: "rate-vendor-service.ejs",
+        subject: "Rate this vendor after service is rendered",
+        data: {
+          buyerName: payload.buyerName,
+          vendorName: business?.name ?? "this vendor",
+          amountPaid: amount.toFixed(2),
+          rateUrl,
+        },
+      });
+    } catch (error) {
+      logger.warn("Failed to send rate vendor email", error);
+    }
+  }
+
   return {
     paymentId: payment.id,
     amount: payment.amount,
@@ -627,31 +655,72 @@ export const handleSquadWebhook = async (
 
   const { transaction_ref, transaction_status } = event.Body;
 
-  const payment = await prisma.payment.findUnique({
-    where: { squadRef: transaction_ref },
-    select: {
-      id: true,
-      status: true,
-      paymentLinkId: true,
-      paymentLink: { select: { isOneTime: true } },
-    },
-  });
-
-  if (!payment || payment.status !== "PENDING") return;
-
-  if (event.Event === "charge_successful" && transaction_status === "success") {
-    await confirmPayment(transaction_ref);
-  } else if (transaction_status === "failed") {
-    await prisma.payment.update({
-      where: { squadRef: transaction_ref },
-      data: { status: "FAILED" },
+  if (transaction_ref.startsWith("onboarding_")) {
+    const onboardingTx = await prisma.onboardingTransaction.findUnique({
+      where: { reference: transaction_ref },
+      select: { id: true, businessId: true, status: true },
     });
-    // Release the one-time link so it can be used again
-    if (payment.paymentLink.isOneTime) {
-      await prisma.paymentLink.update({
-        where: { id: payment.paymentLinkId },
-        data: { isUsed: false },
+
+    if (!onboardingTx || onboardingTx.status !== "PENDING") return;
+
+    if (
+      event.Event === "charge_successful" &&
+      transaction_status === "success"
+    ) {
+      await prisma.onboardingTransaction.update({
+        where: { id: onboardingTx.id },
+        data: { status: "COMPLETED" },
       });
+      await prisma.business.update({
+        where: { id: onboardingTx.businessId },
+        data: { hasPaidOnboardingFee: true },
+      });
+      const user = await prisma.user.findFirst({
+        where: { businessId: onboardingTx.businessId! },
+        select: { id: true },
+      });
+      if (user) {
+        await prisma.userAuth.update({
+          where: { userId: user.id },
+          data: { authStep: null },
+        });
+      }
+    } else if (transaction_status === "failed") {
+      await prisma.onboardingTransaction.update({
+        where: { id: onboardingTx.id },
+        data: { status: "FAILED" },
+      });
+    }
+  } else {
+    const payment = await prisma.payment.findUnique({
+      where: { squadRef: transaction_ref },
+      select: {
+        id: true,
+        status: true,
+        paymentLinkId: true,
+        paymentLink: { select: { isOneTime: true } },
+      },
+    });
+
+    if (!payment || payment.status !== "PENDING") return;
+
+    if (
+      event.Event === "charge_successful" &&
+      transaction_status === "success"
+    ) {
+      await confirmPayment(transaction_ref);
+    } else if (transaction_status === "failed") {
+      await prisma.payment.update({
+        where: { squadRef: transaction_ref },
+        data: { status: "FAILED" },
+      });
+      // Release the one-time link so it can be used again
+      if (payment.paymentLink.isOneTime) {
+        await prisma.paymentLink.update({
+          where: { id: payment.paymentLinkId },
+          data: { isUsed: false },
+        });
+      }
     }
   }
 };
@@ -833,5 +902,87 @@ export const getBusinessTransactionHistory = async (
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
     },
+  };
+};
+
+export const initiateBusinessOnboardingFee = async (businessId: number) => {
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    select: { name: true, owner: { select: { email: true } } },
+  });
+  const squadRef = `onboarding_${generateToken()}`;
+
+  await prisma.onboardingTransaction.create({
+    data: {
+      businessId,
+      reference: squadRef,
+      status: "PENDING",
+      amount: ONBOARDING_FEE_AMOUNT,
+    },
+  });
+
+  const squadResult = await squadService.initializeTransaction({
+    email: business?.owner.email! ?? "adejaredaniel12@gmail.com",
+    amount: ONBOARDING_FEE_AMOUNT,
+    transactionRef: squadRef,
+    customerName: business?.name ?? "VendorProof User",
+    callbackUrl: `${env.CHECKOUT_REDIRECT_URL}/onboarding/verify/${squadRef}`,
+  });
+
+  return {
+    checkoutUrl: squadResult.checkoutUrl,
+    transactionReference: squadRef,
+  };
+};
+
+export const verifyBusinessOnboardingFee = async (squadRef: string) => {
+  const transaction = await prisma.onboardingTransaction.findUnique({
+    where: { reference: squadRef },
+    select: { id: true, businessId: true, status: true },
+  });
+
+  const user = await prisma.user.findFirst({
+    where: { businessId: transaction?.businessId! },
+    select: { id: true },
+  });
+
+  if (!transaction) {
+    throw new CustomError(
+      HttpStatus.NOT_FOUND,
+      "Onboarding transaction not found",
+    );
+  }
+
+  if (transaction.status === "COMPLETED") {
+    return {
+      status: "COMPLETED",
+      message: "Onboarding fee has already been paid",
+    };
+  }
+
+  const squadTx = await squadService.verifyTransaction(squadRef);
+
+  if (squadTx.transaction_status === "success") {
+    await prisma.onboardingTransaction.update({
+      where: { id: transaction.id },
+      data: { status: "COMPLETED" },
+    });
+    await prisma.business.update({
+      where: { id: transaction.businessId },
+      data: { hasPaidOnboardingFee: true },
+    });
+    await prisma.userAuth.update({
+      where: { userId: user!.id },
+      data: { authStep: null },
+    });
+    return {
+      status: "COMPLETED",
+      message: "Onboarding fee payment confirmed",
+    };
+  }
+
+  return {
+    status: "PENDING",
+    message: "Onboarding fee payment is still pending",
   };
 };

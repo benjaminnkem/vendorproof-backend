@@ -179,14 +179,28 @@ export const getBusinessTransactionHistory = asyncHandler(
         req.businessId!,
         query,
       );
-    res
-      .status(HttpStatus.OK)
-      .json({
-        status: "success",
-        statusCode: HttpStatus.OK,
-        message,
-        data,
-        meta,
-      });
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message,
+      data,
+      meta,
+    });
+  },
+);
+
+export const verifyOnboardingPayment = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const transactionReference = req.params["transactionReference"] as string;
+
+    const { message, ...data } =
+      await paymentService.verifyBusinessOnboardingFee(transactionReference);
+
+    res.status(HttpStatus.OK).json({
+      status: "success",
+      statusCode: HttpStatus.OK,
+      message,
+      data,
+    });
   },
 );
