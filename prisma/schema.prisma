@@ -299,7 +299,7 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   paymentLink PaymentLink    @relation(fields: [paymentLinkId], references: [id], onDelete: Cascade)
-  business    Business       @relation(fields: [businessId], references: [id])
+  business    Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   rating      PaymentRating?
 
   @@index([ratingToken], name: "idx_payment_rating_token")
