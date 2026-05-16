@@ -862,7 +862,6 @@ export const getBusinessTransactionHistory = async (
   const skip = (page - 1) * limit;
 
   const filter = {
-    businessId,
     ...(query.status ? { status: query.status } : {}),
   };
 
