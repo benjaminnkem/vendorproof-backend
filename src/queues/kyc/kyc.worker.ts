@@ -19,7 +19,7 @@ export const kycWorker = new Worker<KycVerificationJobPayload>(
   },
   {
     connection: redisConnection,
-    concurrency: 1,
+    concurrency: 2,
   },
 );
 
