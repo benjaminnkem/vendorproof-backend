@@ -671,17 +671,14 @@ export const handleSquadWebhook = async (
         where: { id: onboardingTx.id },
         data: { status: "COMPLETED" },
       });
-      await prisma.business.update({
+      const business = await prisma.business.update({
         where: { id: onboardingTx.businessId },
         data: { hasPaidOnboardingFee: true },
+        select: { owner: { select: { id: true } } },
       });
-      const user = await prisma.user.findFirst({
-        where: { businessId: onboardingTx.businessId! },
-        select: { id: true },
-      });
-      if (user) {
+      if (business?.owner) {
         await prisma.userAuth.update({
-          where: { userId: user.id },
+          where: { userId: business.owner.id },
           data: { authStep: null },
         });
       }
@@ -941,17 +938,19 @@ export const verifyBusinessOnboardingFee = async (squadRef: string) => {
     select: { id: true, businessId: true, status: true },
   });
 
-  const user = await prisma.user.findFirst({
-    where: { businessId: transaction?.businessId! },
-    select: { id: true },
-  });
-
   if (!transaction) {
     throw new CustomError(
       HttpStatus.NOT_FOUND,
       "Onboarding transaction not found",
     );
   }
+
+  const business = await prisma.business.findUnique({
+    where: { id: transaction!.businessId },
+    select: {
+      owner: { select: { id: true } },
+    },
+  });
 
   if (transaction.status === "COMPLETED") {
     return {
@@ -972,7 +971,7 @@ export const verifyBusinessOnboardingFee = async (squadRef: string) => {
       data: { hasPaidOnboardingFee: true },
     });
     await prisma.userAuth.update({
-      where: { userId: user!.id },
+      where: { userId: business?.owner.id! },
       data: { authStep: null },
     });
     return {
