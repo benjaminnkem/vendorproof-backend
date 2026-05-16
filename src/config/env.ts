@@ -23,5 +23,4 @@ export const env = {
   APP_BASE_URL: process.env["APP_BASE_URL"]!,
   CHECKOUT_REDIRECT_URL: process.env["CHECKOUT_REDIRECT_URL"]!,
   FRONTEND_URL: process.env["FRONTEND_URL"]!,
-  MOBILE_DEEP_LINK_SCHEME: process.env["MOBILE_DEEP_LINK_SCHEME"]!,
 };

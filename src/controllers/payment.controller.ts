@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { env } from "../config/env";
 import { HttpStatus } from "../@types";
 import asyncHandler from "../config/async-handler";
 import { AuthRequest } from "../config/auth-middleware";
@@ -209,7 +208,7 @@ export const verifyOnboardingPayment = asyncHandler(
 export const redirectOnboardingPayment = asyncHandler(
   async (req: Request, res: Response) => {
     const squadRef = req.params["squadRef"] as string;
-    const scheme = env.MOBILE_DEEP_LINK_SCHEME;
+    const scheme = "vendorproof";
 
     const result = await paymentService.verifyBusinessOnboardingFee(squadRef);
 
