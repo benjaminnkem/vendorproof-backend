@@ -134,6 +134,13 @@ export const getOrCreateGenericPaymentLink = async (businessId: number) => {
       where: { id: businessId },
       data: { paymentLink: url, qrCodeUrl: qrCode },
     });
+  } else {
+    await prisma.business.update({
+      where: { id: businessId },
+      data: {
+        paymentLink: resolveLinkWithBaseUrl(`/pay/${link.token}`),
+      },
+    });
   }
 
   return {
