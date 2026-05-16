@@ -926,7 +926,7 @@ export const initiateBusinessOnboardingFee = async (businessId: number) => {
     amount: ONBOARDING_FEE_AMOUNT,
     transactionRef: squadRef,
     customerName: business?.name ?? "VendorProof User",
-    callbackUrl: `${env.CHECKOUT_REDIRECT_URL}/onboarding/verify/${squadRef}`,
+    callbackUrl: `${env.APP_BASE_URL}/pay/onboarding-fee/redirect/${squadRef}`,
   });
 
   return {

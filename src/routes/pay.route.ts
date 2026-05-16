@@ -17,4 +17,9 @@ payRouter.get(
   paymentController.verifyOnboardingPayment,
 );
 
+payRouter.get(
+  "/onboarding-fee/redirect/:squadRef",
+  paymentController.redirectOnboardingPayment,
+);
+
 export default payRouter;

@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { env } from "../config/env";
 import { HttpStatus } from "../@types";
 import asyncHandler from "../config/async-handler";
 import { AuthRequest } from "../config/auth-middleware";
@@ -202,5 +203,20 @@ export const verifyOnboardingPayment = asyncHandler(
       message,
       data,
     });
+  },
+);
+
+export const redirectOnboardingPayment = asyncHandler(
+  async (req: Request, res: Response) => {
+    const squadRef = req.params["squadRef"] as string;
+    const scheme = env.MOBILE_DEEP_LINK_SCHEME;
+
+    const result = await paymentService.verifyBusinessOnboardingFee(squadRef);
+
+    if (result.status === "COMPLETED") {
+      return res.redirect(`${scheme}://onboarding/verify?status=success&ref=${squadRef}`);
+    }
+
+    res.redirect(`${scheme}://onboarding/verify?status=failed&ref=${squadRef}`);
   },
 );
