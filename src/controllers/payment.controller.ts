@@ -204,3 +204,18 @@ export const verifyOnboardingPayment = asyncHandler(
     });
   },
 );
+
+export const redirectOnboardingPayment = asyncHandler(
+  async (req: Request, res: Response) => {
+    const squadRef = req.params["squadRef"] as string;
+    const scheme = "vendorproof";
+
+    const result = await paymentService.verifyBusinessOnboardingFee(squadRef);
+
+    if (result.status === "COMPLETED") {
+      return res.redirect(`${scheme}://onboarding/verify?status=success&ref=${squadRef}`);
+    }
+
+    res.redirect(`${scheme}://onboarding/verify?status=failed&ref=${squadRef}`);
+  },
+);

@@ -1152,6 +1152,44 @@ paths:
                 message: Onboarding transaction not found
                 timestamp: "2026-05-10T12:00:00.000Z"
 
+  /api/pay/onboarding-fee/redirect/{squadRef}:
+    get:
+      summary: Redirect after onboarding fee payment
+      description: >
+        Called by Squad after the vendor completes payment on the hosted checkout page.
+        Verifies the payment and redirects the mobile app via deep link —
+        `vendorproof://onboarding/verify?status=success&ref={squadRef}` on success,
+        or `vendorproof://onboarding/verify?status=failed&ref={squadRef}` on failure.
+        This endpoint is not called directly by the app; it is the Squad callback URL.
+      tags:
+        - Pay
+      parameters:
+        - in: path
+          name: squadRef
+          required: true
+          schema:
+            type: string
+            example: onboarding_abc123xyz
+      responses:
+        "302":
+          description: Redirects to the mobile app deep link with payment status
+          headers:
+            Location:
+              schema:
+                type: string
+                example: "vendorproof://onboarding/verify?status=success&ref=onboarding_abc123xyz"
+        "404":
+          description: Onboarding transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                statusCode: 404
+                message: Onboarding transaction not found
+                timestamp: "2026-05-10T12:00:00.000Z"
+
   /api/pay/webhook/squad:
     post:
       summary: Squad payment webhook
