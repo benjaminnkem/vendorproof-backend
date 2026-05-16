@@ -45,6 +45,7 @@
     "typescript-eslint": "^8.59.2"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.4.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "6.19.0",
     "@tensorflow/tfjs": "^1.7.0",
